@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Copyright>2018-2019 The ZoroChain Project</Copyright>
+    <AssemblyTitle>Neo.CLI</AssemblyTitle>
+    <Version>0.1.0</Version>
+    <Authors>The ZoroChain Project</Authors>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>Zoro-Cli</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>ZoroChain.CLI</PackageId>
+    <RootNamespace>Zoro</RootNamespace>
+    <Company>The ZoroChain Project</Company>
+    <Product>ZoroChain.CLI</Product>
+    <Description>ZoroChain.CLI</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>False</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Zoro\Zoro\Zoro.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config.json;config.mainnet.json;config.testnet.json;protocol.json;protocol.mainnet.json;protocol.testnet.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
