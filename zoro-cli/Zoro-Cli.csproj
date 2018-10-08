@@ -13,6 +13,8 @@
     <Company>The ZoroChain Project</Company>
     <Product>ZoroChain.CLI</Product>
     <Description>ZoroChain.CLI</Description>
+    <ApplicationIcon />
+    <StartupObject />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
