@@ -11,6 +11,7 @@ using Zoro.SmartContract;
 using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
 using Zoro.Wallets.SQLite;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -206,6 +207,8 @@ namespace Zoro.Shell
                     return OnCreateAddressCommand(args);
                 case "wallet":
                     return OnCreateWalletCommand(args);
+                case "appchain":
+                    return OnCreateAppChainCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -297,6 +300,126 @@ namespace Zoro.Shell
                     break;
             }
             return true;
+        }
+
+        private bool OnCreateAppChainCommand(string[] args)
+        {
+            if (NoWallet()) return true;
+
+            KeyPair keyPair = Program.Wallet.GetAccounts().FirstOrDefault(p => p.HasKey)?.GetKey();
+            if (keyPair == null)
+            {
+                Console.WriteLine("error, can't get pubkey");
+                return true;
+            }
+
+            string name = ReadString("name");
+            if (name.Length == 0)
+            {
+                Console.WriteLine("cancelled");
+                return true;
+            }
+
+            int tcpPort = ReadInt("tcp port");
+            int wsPort = ReadInt("websocket port");
+
+            int numSeeds = ReadInt("seed count");
+            if (numSeeds <= 0)
+            {
+                Console.WriteLine("cancelled");
+                return true;
+            }
+
+            string[] seedList = new string[numSeeds];
+            for (int i = 0;i < numSeeds;i++)
+            {
+                seedList[i] = ReadString("seed node address " + (i+1).ToString());
+            }
+
+            int numValidators = ReadInt("validator count");
+            if (numValidators < 4)
+            {
+                Console.WriteLine("cancelled, the input nmber is less then minimum validator count:4.");
+                return true;
+            }
+
+            string[] validators = new string[numValidators];
+            for (int i = 0; i < numValidators; i++)
+            {
+                validators[i] = ReadString("validator pubkey " + (i + 1).ToString());
+            }
+
+            ScriptBuilder sb = new ScriptBuilder();
+            for (int i = 0; i < numValidators; i++)
+            {
+                sb.EmitPush(validators[i]);
+            }
+            sb.EmitPush(numSeeds);
+            for (int i = 0; i < numSeeds; i++)
+            {
+                sb.EmitPush(seedList[i]);
+            }
+            sb.EmitPush(numSeeds);
+            sb.EmitPush(wsPort);
+            sb.EmitPush(tcpPort);
+            sb.EmitPush(DateTime.UtcNow.ToTimestamp());
+            sb.EmitPush(keyPair.PublicKey.EncodePoint(true));
+            sb.EmitPush(name);
+
+            UInt160 chainHash = sb.ToArray().ToScriptHash();
+            sb.EmitPush(chainHash);
+            sb.EmitSysCall("Zoro.AppChain.Create");            
+
+            InvocationTransaction tx = new InvocationTransaction
+            {
+                ChainHash = UInt160.Zero,
+                Version = 1,
+                Script = sb.ToArray(),
+                Gas = Fixed8.Zero,
+            };
+            tx.Gas -= Fixed8.FromDecimal(10);
+            if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
+            tx.Gas = tx.Gas.Ceiling();
+            tx = Program.Wallet.MakeTransaction(tx);
+            if (tx != null)
+            {
+                ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
+                Program.Wallet.Sign(context);
+                if (context.Completed)
+                    tx.Witnesses = context.GetWitnesses();
+                else
+                    tx = null;
+            }
+
+            RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
+
+            if (reason != RelayResultReason.Succeed)
+            {
+                Console.WriteLine($"Local Node could not relay transaction: {GetRelayResult(reason)}");
+            }
+            else
+            {
+                Console.WriteLine($"Appchain hash: {chainHash.ToArray().Reverse().ToHexString()}");
+            }
+
+            return true;
+        }
+
+        private static string GetRelayResult(RelayResultReason reason)
+        {
+            switch (reason)
+            {
+                case RelayResultReason.AlreadyExists:
+                    return "Block or transaction already exists and cannot be sent repeatedly.";
+                case RelayResultReason.OutOfMemory:
+                    return "The memory pool is full and no more transactions can be sent.";
+                case RelayResultReason.UnableToVerify:
+                    return "The block cannot be validated.";
+                case RelayResultReason.Invalid:
+                    return "Block or transaction validation failed.";
+                default:
+                    return "Unkown error.";
+            }
         }
 
         private bool OnExportCommand(string[] args)

@@ -100,6 +100,36 @@ namespace Zoro.Services
             return securePwd;
         }
 
+        public static string ReadString(string prompt)
+        {
+            Console.Write(prompt);
+            Console.Write(": ");
+
+            string line = Console.ReadLine()?.Trim();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
+
+            return line;
+        }
+
+        public static int ReadInt(string prompt)
+        {
+            Console.Write(prompt);
+            Console.Write(": ");
+
+            string line = Console.ReadLine()?.Trim();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
+
+            if (int.TryParse(line, out int result))
+            {
+                return result;
+            }
+            return 0;
+        }
+
         public void Run(string[] args)
         {
             OnStart(args);
