@@ -383,23 +383,28 @@ namespace Zoro.Shell
             tx = Program.Wallet.MakeTransaction(tx);
             if (tx != null)
             {
+                tx.Attributes = new TransactionAttribute[1];
+                tx.Attributes[0] = new TransactionAttribute();
+                tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
+                tx.Attributes[0].Data = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToArray();
+
                 ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
                 Program.Wallet.Sign(context);
                 if (context.Completed)
+                {
                     tx.Witnesses = context.GetWitnesses();
-                else
-                    tx = null;
-            }
 
-            RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
+                    RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
 
-            if (reason != RelayResultReason.Succeed)
-            {
-                Console.WriteLine($"Local Node could not relay transaction: {GetRelayResult(reason)}");
-            }
-            else
-            {
-                Console.WriteLine($"Appchain hash: {chainHash.ToArray().Reverse().ToHexString()}");
+                    if (reason != RelayResultReason.Succeed)
+                    {
+                        Console.WriteLine($"Local Node could not relay transaction: {GetRelayResult(reason)}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Appchain hash: {chainHash.ToArray().Reverse().ToHexString()}");
+                    }
+                }
             }
 
             return true;
