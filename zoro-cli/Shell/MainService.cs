@@ -890,15 +890,26 @@ namespace Zoro.Shell
                     if (Program.Wallet != null)
                         wh = (Program.Wallet.WalletHeight > 0) ? Program.Wallet.WalletHeight - 1 : 0;
                     Console.Clear();
-                    Console.WriteLine($"block: {wh}/{Blockchain.Root.Height}/{Blockchain.Root.HeaderHeight}  connected: {LocalNode.Root.ConnectedCount}  unconnected: {LocalNode.Root.UnconnectedCount}");
-                    foreach (RemoteNode node in LocalNode.Root.GetRemoteNodes().Take(Console.WindowHeight - 2))
-                        Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}");
+                    ShowState(wh, Blockchain.Root, LocalNode.Root);
+                    LocalNode[] appchainNodes = LocalNode.AppChainNodes();
+                    foreach(var node in appchainNodes)
+                    {
+                        Console.WriteLine("====================================================================");
+                        ShowState(wh, node.Blockchain, node);
+                    }
                     Thread.Sleep(500);
                 }
             });
             Console.ReadLine();
             stop = true;
             return true;
+        }
+
+        private void ShowState(uint wh, Blockchain blockchain, LocalNode localNode)
+        {
+            Console.WriteLine($"block: {wh}/{blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}");
+            foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
+                Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}");
         }
 
         private bool OnShowUtxoCommand(string[] args)
