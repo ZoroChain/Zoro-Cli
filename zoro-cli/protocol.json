@@ -2,28 +2,41 @@
   "ProtocolConfiguration": {
     "Magic": 1953787457,
     "AddressVersion": 23,
-    "SecondsPerBlock": 15,
+    "SecondsPerBlock": 5,
     "StandbyValidators": [
-      "0327da12b5c40200e9f65569476bbff2218da4f32548ff43b6387ec1416a231ee8",
-      "026ce35b29147ad09e4afe4ec4a7319095f08198fa8babbe3c56e970b143528d22",
-      "0209e7fd41dfb5c2f8dc72eb30358ac100ea8c72da18847befe06eade68cebfcb9",
-      "039dafd8571a641058ccc832c5e2111ea39b09c0bde36050914384f7a48bce9bf9",
-      "038dddc06ce687677a53d54f096d2591ba2302068cf123c1f2d75c2dddc5425579",
-      "02d02b1873a0863cd042cc717da31cea0d7cf9db32b74d4c72c01b0011503e2e22",
-      "034ff5ceeac41acf22cd5ed2da17a6df4dd8358fcb2bfb1a43208ad0feaab2746b"
+      "02e42b7e95cd9d91d8b473a340b1c2827d50715f9e95ce003587dc29513499cb08",
+      "03b8d429f0d57a8cdf93dc7faf850fef23d2a17ce669bba7640cd0bcda21eafb0b",
+      "02da01221b5d9064305ababd48bea8fadbd09ec2f1a4e674d470de80ce345cc356",
+      "031f210b12e522205295cec1e28e1420cb581d1235157015a1dbb033586530b704"
     ],
     "SeedList": [
-      "seed1.neo.org:20333",
-      "seed2.neo.org:20333",
-      "seed3.neo.org:20333",
-      "seed4.neo.org:20333",
-      "seed5.neo.org:20333"
+      "127.0.0.1:20343",
+      "127.0.0.1:20353",
+      "127.0.0.1:20363",
+      "127.0.0.1:20373"
     ],
     "SystemFee": {
       "EnrollmentTransaction": 10,
       "IssueTransaction": 5,
       "PublishTransaction": 5,
       "RegisterTransaction": 100
+    },
+    "AppChains": {
+      "Path": "AppChain_{0}",
+      "Chains": [
+        {
+          "Hash": "46650ecd479d802040de34124b35fc3be16f1800",
+          "Port": 21003,
+          "WsPort": 21004,
+          "StartConsensus": true
+        },
+        {
+          "Hash": "577ef9c6c331efa6fd479f57f9ba4e4796c46f81",
+          "Port": 22003,
+          "WsPort": 22004,
+          "StartConsensus": true
+        }
+      ]
     }
   }
 }
