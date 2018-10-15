@@ -895,7 +895,7 @@ namespace Zoro.Shell
                     foreach(var node in appchainNodes)
                     {
                         Console.WriteLine("====================================================================");
-                        ShowState(wh, node.Blockchain, node);
+                        ShowState(0, node.Blockchain, node);
                     }
                     Thread.Sleep(500);
                 }
@@ -907,7 +907,7 @@ namespace Zoro.Shell
 
         private void ShowState(uint wh, Blockchain blockchain, LocalNode localNode)
         {
-            Console.WriteLine($"block: {wh}/{blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}");
+            Console.WriteLine($"block:{blockchain.ChainHash.ToString()} {wh}/{blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}");
             foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
                 Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}");
         }
