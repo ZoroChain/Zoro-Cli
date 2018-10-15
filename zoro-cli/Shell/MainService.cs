@@ -320,9 +320,6 @@ namespace Zoro.Shell
                 return true;
             }
 
-            int tcpPort = ReadInt("tcp port");
-            int wsPort = ReadInt("websocket port");
-
             int numSeeds = ReadInt("seed count");
             if (numSeeds <= 0)
             {
@@ -360,8 +357,6 @@ namespace Zoro.Shell
                 sb.EmitPush(seedList[i]);
             }
             sb.EmitPush(numSeeds);
-            sb.EmitPush(wsPort);
-            sb.EmitPush(tcpPort);
             sb.EmitPush(DateTime.UtcNow.ToTimestamp());
             sb.EmitPush(keyPair.PublicKey.EncodePoint(true));
             sb.EmitPush(name);
