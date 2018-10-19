@@ -375,30 +375,30 @@ namespace Zoro.Shell
             tx.Gas -= Fixed8.FromDecimal(10);
             if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
             tx.Gas = tx.Gas.Ceiling();
-            tx = Program.Wallet.MakeTransaction(tx);
-            if (tx != null)
+
+            tx.Inputs = new CoinReference[0];
+            tx.Outputs = new TransactionOutput[0];
+
+            tx.Attributes = new TransactionAttribute[1];
+            tx.Attributes[0] = new TransactionAttribute();
+            tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
+            tx.Attributes[0].Data = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToArray();
+
+            ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
+            Program.Wallet.Sign(context);
+            if (context.Completed)
             {
-                tx.Attributes = new TransactionAttribute[1];
-                tx.Attributes[0] = new TransactionAttribute();
-                tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
-                tx.Attributes[0].Data = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToArray();
+                tx.Witnesses = context.GetWitnesses();
 
-                ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
-                Program.Wallet.Sign(context);
-                if (context.Completed)
+                RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
+
+                if (reason != RelayResultReason.Succeed)
                 {
-                    tx.Witnesses = context.GetWitnesses();
-
-                    RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
-
-                    if (reason != RelayResultReason.Succeed)
-                    {
-                        Console.WriteLine($"Local Node could not relay transaction: {GetRelayResult(reason)}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Appchain hash: {chainHash.ToArray().Reverse().ToHexString()}");
-                    }
+                    Console.WriteLine($"Local Node could not relay transaction: {GetRelayResult(reason)}");
+                }
+                else
+                {
+                    Console.WriteLine($"Appchain hash: {chainHash.ToArray().Reverse().ToHexString()}");
                 }
             }
 
