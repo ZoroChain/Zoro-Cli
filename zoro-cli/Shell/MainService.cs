@@ -909,8 +909,11 @@ namespace Zoro.Shell
                     LocalNode[] appchainNodes = LocalNode.AppChainNodes();
                     foreach(var node in appchainNodes)
                     {
-                        Console.WriteLine("====================================================================");
-                        ShowState(0, node.Blockchain, node);
+                        if (node != null)
+                        {
+                            Console.WriteLine("====================================================================");
+                            ShowState(0, node.Blockchain, node);
+                        }
                     }
                     Thread.Sleep(500);
                 }
