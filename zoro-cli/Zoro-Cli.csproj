@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Zoro\Zoro\Zoro.csproj" />
+    <PackageReference Include="ZoroChain" Version="0.1.1" />
   </ItemGroup>
 
   <ItemGroup>
