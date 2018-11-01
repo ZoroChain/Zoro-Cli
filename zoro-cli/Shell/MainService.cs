@@ -31,7 +31,6 @@ namespace Zoro.Shell
         private LevelDBStore store;
         private ZoroSystem system;
         private WalletIndexer indexer;
-        private RpcAgent agent;
 
         protected override string Prompt => "zoro";
         public override string ServiceName => "Zoro-CLI";
@@ -970,7 +969,6 @@ namespace Zoro.Shell
         protected internal override void OnStart(string[] args)
         {
             bool useRPC = false;
-            bool useRPCAgent = false;
             for (int i = 0; i < args.Length; i++)
                 switch (args[i])
                 {
@@ -978,11 +976,6 @@ namespace Zoro.Shell
                     case "--rpc":
                     case "-r":
                         useRPC = true;
-                        break;
-                    case "/rpc-agent":
-                    case "--rpc-agent":
-                    case "-ra":
-                        useRPCAgent = true;
                         break;
                 }
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
@@ -1013,11 +1006,6 @@ namespace Zoro.Shell
                     sslCert: Settings.Default.RPC.SslCert,
                     password: Settings.Default.RPC.SslCertPassword);
             }
-            if (useRPCAgent)
-            {
-                agent = new RpcAgent();
-                agent.Start(Settings.Default.RPCAgent.Port);
-            }
         }
 
         private bool OnStartCommand(string[] args)
@@ -1043,7 +1031,6 @@ namespace Zoro.Shell
         {
             system.Dispose();
             store.Dispose();
-            agent?.Dispose();
         }
 
         private bool OnUpgradeCommand(string[] args)
