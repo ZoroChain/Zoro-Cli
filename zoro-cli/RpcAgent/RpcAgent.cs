@@ -36,12 +36,12 @@ namespace Zoro
 
         void server_ClientConnected(object sender, TcpClientConnectedEventArgs e)
         {
-            Console.WriteLine(string.Format("TCP client {0} has connected {1}.", e.Session.RemoteEndPoint, e.Session));
+            //Console.WriteLine(string.Format("TCP client {0} has connected {1}.", e.Session.RemoteEndPoint, e.Session));
         }
 
         void server_ClientDisconnected(object sender, TcpClientDisconnectedEventArgs e)
         {
-            Console.WriteLine(string.Format("TCP client {0} has disconnected.", e.Session));
+            //Console.WriteLine(string.Format("TCP client {0} has disconnected.", e.Session));
         }
 
         void server_ClientDataReceived(object sender, TcpClientDataReceivedEventArgs e)
