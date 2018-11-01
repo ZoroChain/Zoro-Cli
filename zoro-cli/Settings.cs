@@ -9,6 +9,7 @@ namespace Zoro
         public PathsSettings Paths { get; }
         public P2PSettings P2P { get; }
         public RPCSettings RPC { get; }
+        public RPCAgentSettings RPCAgent { get; }
         public UnlockWalletSettings UnlockWallet { get; set; }
 
         public static Settings Default { get; }
@@ -24,6 +25,7 @@ namespace Zoro
             this.Paths = new PathsSettings(section.GetSection("Paths"));
             this.P2P = new P2PSettings(section.GetSection("P2P"));
             this.RPC = new RPCSettings(section.GetSection("RPC"));
+            this.RPCAgent = new RPCAgentSettings(section.GetSection("RPCAgent"));
             this.UnlockWallet = new UnlockWalletSettings(section.GetSection("UnlockWallet"));
         }
     }
@@ -65,6 +67,21 @@ namespace Zoro
             this.Port = ushort.Parse(section.GetSection("Port").Value);
             this.SslCert = section.GetSection("SslCert").Value;
             this.SslCertPassword = section.GetSection("SslCertPassword").Value;
+        }
+    }
+
+    internal class RPCAgentSettings
+    {
+        public ushort Port { get; }
+        public ushort MaxConnections { get; }
+
+        public RPCAgentSettings(IConfigurationSection section)
+        {
+            if (section.Exists())
+            {
+                this.Port = ushort.Parse(section.GetSection("Port").Value);
+                this.MaxConnections = ushort.Parse(section.GetSection("MaxConnections").Value);
+            }
         }
     }
 
