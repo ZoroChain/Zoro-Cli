@@ -1,39 +1,44 @@
 ﻿{
   "ProtocolConfiguration": {
-    "Magic": 7630401,
+    "Magic": 58225482,
     "AddressVersion": 23,
-    "SecondsPerBlock": 15,
+    "SecondsPerBlock": 1,
     "StandbyValidators": [
-      "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c",
-      "02df48f60e8f3e01c48ff40b9b7f1310d7a8b2a193188befe1c2e3df740e895093",
-      "03b8d9d5771d8f513aa0869b9cc8d50986403b78c6da36890638c3d46a5adce04a",
-      "02ca0e27697b9c248f6f16e085fd0061e26f44da85b58ee835c110caa5ec3ba554",
-      "024c7b7fb6c310fccf1ba33b082519d82964ea93868d676662d4a59ad548df0e7d",
-      "02aaec38470f6aad0042c6e877cfd8087d2676b0f516fddd362801b9bd3936399e",
-      "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70"
+      "025178aa02ccb9a30c74c0e9771ed60d771710625e41d1ae37a192a6db2c00e7d6",
+      "02ade1a21bd7d90b88299e7e1fef91c12fdc9988ad9100816d3b50cb6090fd88a2",
+      "02f0a7538d3aa6fc6a91315c5842733820df5b4ec1e4f273adc5d36eebd0f7463a",
+      "03f35c16c5e8837697b9263f44f62be58c058562e76b033ed29a2223792901f6b1"
     ],
     "SeedList": [
-      "seed1.ngd.network:10333",
-      "seed2.ngd.network:10333",
-      "seed3.ngd.network:10333",
-      "seed4.ngd.network:10333",
-      "seed5.ngd.network:10333",
-      "seed6.ngd.network:10333",
-      "seed7.ngd.network:10333",
-      "seed8.ngd.network:10333",
-      "seed9.ngd.network:10333",
-      "seed10.ngd.network:10333",
-      "seed1.neo.org:10333",
-      "seed2.neo.org:10333",
-      "seed3.neo.org:10333",
-      "seed4.neo.org:10333",
-      "seed5.neo.org:10333"
+      "182.254.221.14:20001",
+      "123.207.183.55:20001",
+      "182.254.219.170:20001",
+      "115.159.68.43:20001"
     ],
     "SystemFee": {
-      "EnrollmentTransaction": 1000,
-      "IssueTransaction": 500,
-      "PublishTransaction": 500,
-      "RegisterTransaction": 10000
+    },
+    "AppChains": {
+      "Path": "AppChain/{0}_{1}",
+      "Chains": [
+        {
+          "Hash": "0db5eff8ca875a656010c3dfe68870454b47aa6c",
+          "Port": 30005,
+          "WsPort": 30015,
+          "StartConsensus": false
+        },
+        {
+          "Hash": "1f49d2e1751e7e5f2c7e67ee6043422d85e09b58",
+          "Port": 31005,
+          "WsPort": 31015,
+          "StartConsensus": false
+        },
+        {
+          "Hash": "71c3c1f38feb8c959065ee9645b10e86bf350b22",
+          "Port": 32005,
+          "WsPort": 32015,
+          "StartConsensus": false
+        }
+      ]
     }
   }
 }

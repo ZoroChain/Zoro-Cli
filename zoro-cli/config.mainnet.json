@@ -5,13 +5,18 @@
       "Index": "Index_{0}"
     },
     "P2P": {
-      "Port": 10333,
-      "WsPort": 10334
+      "Port": 20001,
+      "WsPort": 20010
     },
     "RPC": {
-      "Port": 10332,
+      "BindAddress": "127.0.0.1",
+      "Port": 20332,
       "SslCert": "",
       "SslCertPassword": ""
+    },
+    "RPCAgent": {
+      "Port": 20333,
+      "MaxConnections": 10
     },
     "UnlockWallet": {
       "Path": "",
