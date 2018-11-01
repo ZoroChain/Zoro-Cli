@@ -33,8 +33,8 @@ namespace Zoro.Shell
         private WalletIndexer indexer;
         private RpcAgent agent;
 
-        protected override string Prompt => "neo";
-        public override string ServiceName => "NEO-CLI";
+        protected override string Prompt => "zoro";
+        public override string ServiceName => "Zoro-CLI";
 
         private WalletIndexer GetIndexer()
         {
