@@ -1030,7 +1030,6 @@ namespace Zoro.Shell
         protected internal override void OnStop()
         {
             system.Dispose();
-            store.Dispose();
         }
 
         private bool OnUpgradeCommand(string[] args)
