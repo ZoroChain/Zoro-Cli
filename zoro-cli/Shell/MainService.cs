@@ -1073,18 +1073,22 @@ namespace Zoro.Shell
             return true;
         }
 
-        private static Wallet OpenWallet(WalletIndexer indexer, string path, string password)
+        private Wallet OpenWallet(WalletIndexer indexer, string path, string password)
         {
+            Wallet wallet;
             if (Path.GetExtension(path) == ".db3")
             {
-                return UserWallet.Open(indexer, path, password);
+                wallet = UserWallet.Open(indexer, path, password);
             }
             else
             {
                 NEP6Wallet nep6wallet = new NEP6Wallet(indexer, path);
                 nep6wallet.Unlock(password);
-                return nep6wallet;
+                wallet = nep6wallet;
             }
+
+            system.PluginMgr.SetWallet(wallet);
+            return wallet;
         }
     }
 }
