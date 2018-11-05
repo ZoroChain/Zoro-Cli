@@ -84,6 +84,8 @@ namespace Zoro.Shell
                     return OnStartCommand(args);
                 case "upgrade":
                     return OnUpgradeCommand(args);
+                case "change":
+                    return OnChangeCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -331,9 +333,9 @@ namespace Zoro.Shell
             }
 
             string[] seedList = new string[numSeeds];
-            for (int i = 0;i < numSeeds;i++)
+            for (int i = 0; i < numSeeds; i++)
             {
-                seedList[i] = ReadString("seed node address " + (i+1).ToString());
+                seedList[i] = ReadString("seed node address " + (i + 1).ToString());
             }
 
             int numValidators = ReadInt("validator count");
@@ -354,7 +356,7 @@ namespace Zoro.Shell
             {
                 sb.EmitPush(validators[i]);
             }
-            sb.EmitPush(numSeeds);
+            sb.EmitPush(numValidators);
             for (int i = 0; i < numSeeds; i++)
             {
                 sb.EmitPush(seedList[i]);
@@ -366,43 +368,13 @@ namespace Zoro.Shell
 
             UInt160 chainHash = sb.ToArray().ToScriptHash();
             sb.EmitPush(chainHash);
-            sb.EmitSysCall("Zoro.AppChain.Create");            
+            sb.EmitSysCall("Zoro.AppChain.Create");
 
-            InvocationTransaction tx = new InvocationTransaction
+            RelayResultReason reason = SubmitInvocationTransaction(keyPair, sb.ToArray());
+
+            if (reason == RelayResultReason.Succeed)
             {
-                ChainHash = UInt160.Zero,
-                Version = 1,
-                Script = sb.ToArray(),
-                Gas = Fixed8.Zero,
-            };
-            tx.Gas -= Fixed8.FromDecimal(10);
-            if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
-            tx.Gas = tx.Gas.Ceiling();
-
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-
-            tx.Attributes = new TransactionAttribute[1];
-            tx.Attributes[0] = new TransactionAttribute();
-            tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
-            tx.Attributes[0].Data = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToArray();
-
-            ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
-            Program.Wallet.Sign(context);
-            if (context.Completed)
-            {
-                tx.Witnesses = context.GetWitnesses();
-
-                RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
-
-                if (reason != RelayResultReason.Succeed)
-                {
-                    Console.WriteLine($"Local Node could not relay transaction: {GetRelayResult(reason)}");
-                }
-                else
-                {
-                    Console.WriteLine($"Appchain hash: {chainHash.ToArray().Reverse().ToHexString()}");
-                }
+                Console.WriteLine($"Appchain hash: {chainHash.ToArray().Reverse().ToHexString()}");
             }
 
             return true;
@@ -910,7 +882,7 @@ namespace Zoro.Shell
                     Console.Clear();
                     ShowState(wh, Blockchain.Root, LocalNode.Root);
                     LocalNode[] appchainNodes = LocalNode.AppChainNodes();
-                    foreach(var node in appchainNodes)
+                    foreach (var node in appchainNodes)
                     {
                         if (node != null)
                         {
@@ -1000,7 +972,7 @@ namespace Zoro.Shell
             }
             if (useRPC)
             {
-                system.StartRpc(Settings.Default.RPC.BindAddress, 
+                system.StartRpc(Settings.Default.RPC.BindAddress,
                     Settings.Default.RPC.Port,
                     wallet: Program.Wallet,
                     sslCert: Settings.Default.RPC.SslCert,
@@ -1089,6 +1061,155 @@ namespace Zoro.Shell
 
             system.PluginMgr.SetWallet(wallet);
             return wallet;
+        }
+
+        private bool OnChangeCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "seedlist":
+                    return OnChangeAppchainSeedListCommand(args);
+                case "validators":
+                    return OnChangeAppchainValidatorsCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
+        }
+
+        private bool OnChangeAppchainSeedListCommand(string[] args)
+        {
+            if (NoWallet()) return true;
+
+            KeyPair keyPair = Program.Wallet.GetAccounts().FirstOrDefault(p => p.HasKey)?.GetKey();
+            if (keyPair == null)
+            {
+                Console.WriteLine("error, can't get pubkey");
+                return true;
+            }
+
+            string hashString = ReadString("appchain hash");
+            if (hashString.Length != 40)
+            {
+                Console.WriteLine("cancelled");
+                return true;
+            }
+
+            int numSeeds = ReadInt("seed count");
+            if (numSeeds <= 0)
+            {
+                Console.WriteLine("cancelled");
+                return true;
+            }
+
+            string[] seedList = new string[numSeeds];
+            for (int i = 0; i < numSeeds; i++)
+            {
+                seedList[i] = ReadString("seed node address " + (i + 1).ToString());
+            }
+
+            ScriptBuilder sb = new ScriptBuilder();
+
+            for (int i = 0; i < numSeeds; i++)
+            {
+                sb.EmitPush(seedList[i]);
+            }
+            sb.EmitPush(numSeeds);
+
+            UInt160 chainHash = UInt160.Parse(hashString);
+            sb.EmitPush(chainHash);
+            sb.EmitSysCall("Zoro.AppChain.ChangeSeedList");
+
+            SubmitInvocationTransaction(keyPair, sb.ToArray());
+            return true;
+        }
+
+        private bool OnChangeAppchainValidatorsCommand(string[] args)
+        {
+            if (NoWallet()) return true;
+
+            KeyPair keyPair = Program.Wallet.GetAccounts().FirstOrDefault(p => p.HasKey)?.GetKey();
+            if (keyPair == null)
+            {
+                Console.WriteLine("error, can't get pubkey");
+                return true;
+            }
+
+            string hashString = ReadString("appchain hash");
+            if (hashString.Length != 40)
+            {
+                Console.WriteLine("cancelled");
+                return true;
+            }
+
+            int numValidators = ReadInt("validator count");
+            if (numValidators < 4)
+            {
+                Console.WriteLine("cancelled, the input nmber is less then minimum validator count:4.");
+                return true;
+            }
+
+            string[] validators = new string[numValidators];
+            for (int i = 0; i < numValidators; i++)
+            {
+                validators[i] = ReadString("validator pubkey " + (i + 1).ToString());
+            }
+
+            ScriptBuilder sb = new ScriptBuilder();
+            for (int i = 0; i < numValidators; i++)
+            {
+                sb.EmitPush(validators[i]);
+            }
+            sb.EmitPush(numValidators);
+
+            UInt160 chainHash = UInt160.Parse(hashString);
+            sb.EmitPush(chainHash);
+            sb.EmitSysCall("Zoro.AppChain.ChangeValidators");
+
+            SubmitInvocationTransaction(keyPair, sb.ToArray());
+            return true;
+        }
+
+        private RelayResultReason SubmitInvocationTransaction(KeyPair keyPair, byte[] script)
+        {
+            InvocationTransaction tx = new InvocationTransaction
+            {
+                ChainHash = UInt160.Zero,
+                Version = 1,
+                Script = script,
+                Gas = Fixed8.Zero,
+            };
+            tx.Gas -= Fixed8.FromDecimal(10);
+            if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
+            tx.Gas = tx.Gas.Ceiling();
+
+            tx.Inputs = new CoinReference[0];
+            tx.Outputs = new TransactionOutput[0];
+
+            tx.Attributes = new TransactionAttribute[1];
+            tx.Attributes[0] = new TransactionAttribute();
+            tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
+            tx.Attributes[0].Data = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToArray();
+
+            ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
+            Program.Wallet.Sign(context);
+            if (context.Completed)
+            {
+                tx.Witnesses = context.GetWitnesses();
+
+                RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
+
+                if (reason != RelayResultReason.Succeed)
+                {
+                    Console.WriteLine($"Local Node could not relay transaction: {GetRelayResult(reason)}");
+                }
+                else
+                {
+                    Console.WriteLine($"Transaction has been accepted.");
+                }
+                return reason;
+            }
+
+            return RelayResultReason.UnableToVerify;
         }
     }
 }
