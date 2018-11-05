@@ -10,6 +10,7 @@ using Zoro.SmartContract;
 using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
 using Zoro.Wallets.SQLite;
+using Zoro.Plugins;
 using Neo.VM;
 using System;
 using System.Collections.Generic;
@@ -1279,15 +1280,11 @@ namespace Zoro.Shell
             string source = args[2];
             if (source == "all")
             {
-                system.PluginMgr.EnableLogAll(true);
-            }
-            else if(source == "none")
-            {
-                system.PluginMgr.EnableLogAll(false);
+                PluginManager.EnableLogAll();
             }
             else
             {
-                system.PluginMgr.EnableLogSource(source);
+                PluginManager.EnableLogSource(source);
             }
 
             return true;
@@ -1295,7 +1292,15 @@ namespace Zoro.Shell
 
         private bool OnDisableLogCommand(string[] args)
         {
-            system.PluginMgr.DisableLogSource(args[2]);
+            string source = args[2];
+            if (source == "all")
+            {
+                PluginManager.DisableLog();
+            }
+            else
+            {
+                PluginManager.DisableLogSource(source);
+            }
 
             return true;
         }
