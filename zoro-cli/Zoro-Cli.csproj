@@ -29,7 +29,7 @@
 
   <ItemGroup>
     <None Update="appchain.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
     <None Update="config.json;config.mainnet.json;config.testnet.json;protocol.json;protocol.mainnet.json;protocol.testnet.json;protocol.local.json">
