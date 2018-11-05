@@ -19,6 +19,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text;
 using ECCurve = Zoro.Cryptography.ECC.ECCurve;
 using ECPoint = Zoro.Cryptography.ECC.ECPoint;
 
@@ -84,8 +85,10 @@ namespace Zoro.Shell
                     return OnStartCommand(args);
                 case "upgrade":
                     return OnUpgradeCommand(args);
-                case "change":
-                    return OnChangeCommand(args);
+                case "appchain":
+                    return OnAppChainCommand(args);
+                case "log":
+                    return OnLogCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -953,7 +956,7 @@ namespace Zoro.Shell
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
             system = new ZoroSystem(UInt160.Zero, store, null);
             system.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
-            system.StartAppChains(Blockchain.Root);
+            system.StartAppChains();
             if (Settings.Default.UnlockWallet.IsActive)
             {
                 try
@@ -1063,20 +1066,22 @@ namespace Zoro.Shell
             return wallet;
         }
 
-        private bool OnChangeCommand(string[] args)
+        private bool OnAppChainCommand(string[] args)
         {
             switch (args[1].ToLower())
             {
                 case "seedlist":
-                    return OnChangeAppchainSeedListCommand(args);
+                    return OnChangeAppChainSeedListCommand(args);
                 case "validators":
-                    return OnChangeAppchainValidatorsCommand(args);
+                    return OnChangeAppChainValidatorsCommand(args);
+                case "follow":
+                    return OnFollowAppChainCommand(args);
                 default:
                     return base.OnCommand(args);
             }
         }
 
-        private bool OnChangeAppchainSeedListCommand(string[] args)
+        private bool OnChangeAppChainSeedListCommand(string[] args)
         {
             if (NoWallet()) return true;
 
@@ -1123,7 +1128,7 @@ namespace Zoro.Shell
             return true;
         }
 
-        private bool OnChangeAppchainValidatorsCommand(string[] args)
+        private bool OnChangeAppChainValidatorsCommand(string[] args)
         {
             if (NoWallet()) return true;
 
@@ -1210,6 +1215,89 @@ namespace Zoro.Shell
             }
 
             return RelayResultReason.UnableToVerify;
+        }
+
+        private bool OnFollowAppChainCommand(string[] args)
+        {
+            string hashString = ReadString("appchain hash");
+            if (hashString.Length != 40)
+            {
+                Console.WriteLine("cancelled");
+                return true;
+            }
+
+            ushort port = (ushort)ReadInt("port");
+            ushort wsport = (ushort)ReadInt("websocket port");
+
+            int startConsensus = ReadInt("start consensus");
+
+            bool exists = system.FollowAppChain(hashString, port, wsport);
+
+            if (startConsensus == 1 && Program.Wallet != null)
+            {
+                system.StartAppChainConsensus(hashString, Program.Wallet);
+            }
+
+            if (exists)
+            {
+                AppChainSettings settings = new AppChainSettings(hashString, port, wsport, startConsensus == 1);
+
+                AppChainsSettings.Default.Chains.Add(hashString, settings);
+
+                SaveAppChainJson();
+            }
+
+            return true;
+        }
+
+        private void SaveAppChainJson()
+        {
+            using (FileStream fs = new FileStream("appchain.json", FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                using (StreamWriter writer = new StreamWriter(fs, Encoding.UTF8))
+                {
+                    writer.Write(AppChainsSettings.Default.ToJson().ToString());
+                }
+            }
+        }
+
+        private bool OnLogCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+                case "enable":
+                    return OnEnableLogCommand(args);
+                case "disable":
+                    return OnDisableLogCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
+        }
+
+        private bool OnEnableLogCommand(string[] args)
+        {
+            string source = args[2];
+            if (source == "all")
+            {
+                system.PluginMgr.EnableLogAll(true);
+            }
+            else if(source == "none")
+            {
+                system.PluginMgr.EnableLogAll(false);
+            }
+            else
+            {
+                system.PluginMgr.EnableLogSource(source);
+            }
+
+            return true;
+        }
+
+        private bool OnDisableLogCommand(string[] args)
+        {
+            system.PluginMgr.DisableLogSource(args[2]);
+
+            return true;
         }
     }
 }
