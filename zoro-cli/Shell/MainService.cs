@@ -1221,15 +1221,8 @@ namespace Zoro.Shell
         private bool OnFollowAppChainCommand(string[] args)
         {
             string hashString = ReadString("appchain hash");
-            if (hashString.Length != 40)
-            {
-                Console.WriteLine("cancelled");
-                return true;
-            }
-
             ushort port = (ushort)ReadInt("port");
             ushort wsport = (ushort)ReadInt("websocket port");
-
             int startConsensus = ReadInt("start consensus");
 
             bool exists = system.FollowAppChain(hashString, port, wsport);
