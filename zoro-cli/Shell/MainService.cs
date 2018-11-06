@@ -945,6 +945,7 @@ namespace Zoro.Shell
         protected internal override void OnStart(string[] args)
         {
             bool useRPC = false;
+            bool disableLog = false;
             for (int i = 0; i < args.Length; i++)
                 switch (args[i])
                 {
@@ -953,7 +954,18 @@ namespace Zoro.Shell
                     case "-r":
                         useRPC = true;
                         break;
+                    case "/disableLog":
+                    case "--disableLog":
+                    case "-logoff":
+                        disableLog = true;
+                        break;
                 }
+
+            if (disableLog)
+            {
+                PluginManager.DisableLog();
+            }
+
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
             system = new ZoroSystem(UInt160.Zero, store, null);
             system.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
