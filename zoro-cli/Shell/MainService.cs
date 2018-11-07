@@ -1087,8 +1087,8 @@ namespace Zoro.Shell
                     return OnChangeAppChainSeedListCommand(args);
                 case "validators":
                     return OnChangeAppChainValidatorsCommand(args);
-                case "follow":
-                    return OnFollowAppChainCommand(args);
+                case "start":
+                    return OnStartAppChainCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -1230,14 +1230,15 @@ namespace Zoro.Shell
             return RelayResultReason.UnableToVerify;
         }
 
-        private bool OnFollowAppChainCommand(string[] args)
+        private bool OnStartAppChainCommand(string[] args)
         {
             string hashString = ReadString("appchain hash");
             ushort port = (ushort)ReadInt("port");
             ushort wsport = (ushort)ReadInt("websocket port");
             int startConsensus = ReadInt("start consensus");
+            int save = ReadInt("save to json file");
 
-            bool exists = system.FollowAppChain(hashString, port, wsport);
+            bool exists = system.StartAppChain(hashString, port, wsport);
 
             if (startConsensus == 1 && Program.Wallet != null)
             {
@@ -1250,21 +1251,13 @@ namespace Zoro.Shell
 
                 AppChainsSettings.Default.Chains.Add(hashString, settings);
 
-                SaveAppChainJson();
+                if (save == 1)
+                {
+                    AppChainsSettings.Default.SaveJsonFile();
+                }
             }
 
             return true;
-        }
-
-        private void SaveAppChainJson()
-        {
-            using (FileStream fs = new FileStream("appchain.json", FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                using (StreamWriter writer = new StreamWriter(fs, Encoding.UTF8))
-                {
-                    writer.Write(AppChainsSettings.Default.ToJson().ToString());
-                }
-            }
         }
 
         private bool OnLogCommand(string[] args)
