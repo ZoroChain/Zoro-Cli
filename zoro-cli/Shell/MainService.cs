@@ -11,7 +11,6 @@ using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
 using Zoro.Wallets.SQLite;
 using Zoro.Plugins;
-using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,7 +19,6 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text;
 using ECCurve = Zoro.Cryptography.ECC.ECCurve;
 using ECPoint = Zoro.Cryptography.ECC.ECPoint;
 
@@ -86,10 +84,6 @@ namespace Zoro.Shell
                     return OnStartCommand(args);
                 case "upgrade":
                     return OnUpgradeCommand(args);
-                case "appchain":
-                    return OnAppChainCommand(args);
-                case "log":
-                    return OnLogCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -216,8 +210,6 @@ namespace Zoro.Shell
                     return OnCreateAddressCommand(args);
                 case "wallet":
                     return OnCreateWalletCommand(args);
-                case "appchain":
-                    return OnCreateAppChainCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -309,96 +301,6 @@ namespace Zoro.Shell
                     break;
             }
             return true;
-        }
-
-        private bool OnCreateAppChainCommand(string[] args)
-        {
-            if (NoWallet()) return true;
-
-            KeyPair keyPair = Program.Wallet.GetAccounts().FirstOrDefault(p => p.HasKey)?.GetKey();
-            if (keyPair == null)
-            {
-                Console.WriteLine("error, can't get pubkey");
-                return true;
-            }
-
-            string name = ReadString("name");
-            if (name.Length == 0)
-            {
-                Console.WriteLine("cancelled");
-                return true;
-            }
-
-            int numSeeds = ReadInt("seed count");
-            if (numSeeds <= 0)
-            {
-                Console.WriteLine("cancelled");
-                return true;
-            }
-
-            string[] seedList = new string[numSeeds];
-            for (int i = 0; i < numSeeds; i++)
-            {
-                seedList[i] = ReadString("seed node address " + (i + 1).ToString());
-            }
-
-            int numValidators = ReadInt("validator count");
-            if (numValidators < 4)
-            {
-                Console.WriteLine("cancelled, the input nmber is less then minimum validator count:4.");
-                return true;
-            }
-
-            string[] validators = new string[numValidators];
-            for (int i = 0; i < numValidators; i++)
-            {
-                validators[i] = ReadString("validator pubkey " + (i + 1).ToString());
-            }
-
-            ScriptBuilder sb = new ScriptBuilder();
-            for (int i = 0; i < numValidators; i++)
-            {
-                sb.EmitPush(validators[i]);
-            }
-            sb.EmitPush(numValidators);
-            for (int i = 0; i < numSeeds; i++)
-            {
-                sb.EmitPush(seedList[i]);
-            }
-            sb.EmitPush(numSeeds);
-            sb.EmitPush(DateTime.UtcNow.ToTimestamp());
-            sb.EmitPush(keyPair.PublicKey.EncodePoint(true));
-            sb.EmitPush(name);
-
-            UInt160 chainHash = sb.ToArray().ToScriptHash();
-            sb.EmitPush(chainHash);
-            sb.EmitSysCall("Zoro.AppChain.Create");
-
-            RelayResultReason reason = SubmitInvocationTransaction(keyPair, sb.ToArray());
-
-            if (reason == RelayResultReason.Succeed)
-            {
-                Console.WriteLine($"Appchain hash: {chainHash.ToArray().Reverse().ToHexString()}");
-            }
-
-            return true;
-        }
-
-        private static string GetRelayResult(RelayResultReason reason)
-        {
-            switch (reason)
-            {
-                case RelayResultReason.AlreadyExists:
-                    return "Block or transaction already exists and cannot be sent repeatedly.";
-                case RelayResultReason.OutOfMemory:
-                    return "The memory pool is full and no more transactions can be sent.";
-                case RelayResultReason.UnableToVerify:
-                    return "The block cannot be validated.";
-                case RelayResultReason.Invalid:
-                    return "Block or transaction validation failed.";
-                default:
-                    return "Unkown error.";
-            }
         }
 
         private bool OnExportCommand(string[] args)
@@ -1077,230 +979,6 @@ namespace Zoro.Shell
 
             system.PluginMgr.SetWallet(wallet);
             return wallet;
-        }
-
-        private bool OnAppChainCommand(string[] args)
-        {
-            switch (args[1].ToLower())
-            {
-                case "seedlist":
-                    return OnChangeAppChainSeedListCommand(args);
-                case "validators":
-                    return OnChangeAppChainValidatorsCommand(args);
-                case "start":
-                    return OnStartAppChainCommand(args);
-                default:
-                    return base.OnCommand(args);
-            }
-        }
-
-        private bool OnChangeAppChainSeedListCommand(string[] args)
-        {
-            if (NoWallet()) return true;
-
-            KeyPair keyPair = Program.Wallet.GetAccounts().FirstOrDefault(p => p.HasKey)?.GetKey();
-            if (keyPair == null)
-            {
-                Console.WriteLine("error, can't get pubkey");
-                return true;
-            }
-
-            string hashString = ReadString("appchain hash");
-            if (hashString.Length != 40)
-            {
-                Console.WriteLine("cancelled");
-                return true;
-            }
-
-            int numSeeds = ReadInt("seed count");
-            if (numSeeds <= 0)
-            {
-                Console.WriteLine("cancelled");
-                return true;
-            }
-
-            string[] seedList = new string[numSeeds];
-            for (int i = 0; i < numSeeds; i++)
-            {
-                seedList[i] = ReadString("seed node address " + (i + 1).ToString());
-            }
-
-            ScriptBuilder sb = new ScriptBuilder();
-
-            for (int i = 0; i < numSeeds; i++)
-            {
-                sb.EmitPush(seedList[i]);
-            }
-            sb.EmitPush(numSeeds);
-
-            UInt160 chainHash = UInt160.Parse(hashString);
-            sb.EmitPush(chainHash);
-            sb.EmitSysCall("Zoro.AppChain.ChangeSeedList");
-
-            SubmitInvocationTransaction(keyPair, sb.ToArray());
-            return true;
-        }
-
-        private bool OnChangeAppChainValidatorsCommand(string[] args)
-        {
-            if (NoWallet()) return true;
-
-            KeyPair keyPair = Program.Wallet.GetAccounts().FirstOrDefault(p => p.HasKey)?.GetKey();
-            if (keyPair == null)
-            {
-                Console.WriteLine("error, can't get pubkey");
-                return true;
-            }
-
-            string hashString = ReadString("appchain hash");
-            if (hashString.Length != 40)
-            {
-                Console.WriteLine("cancelled");
-                return true;
-            }
-
-            int numValidators = ReadInt("validator count");
-            if (numValidators < 4)
-            {
-                Console.WriteLine("cancelled, the input nmber is less then minimum validator count:4.");
-                return true;
-            }
-
-            string[] validators = new string[numValidators];
-            for (int i = 0; i < numValidators; i++)
-            {
-                validators[i] = ReadString("validator pubkey " + (i + 1).ToString());
-            }
-
-            ScriptBuilder sb = new ScriptBuilder();
-            for (int i = 0; i < numValidators; i++)
-            {
-                sb.EmitPush(validators[i]);
-            }
-            sb.EmitPush(numValidators);
-
-            UInt160 chainHash = UInt160.Parse(hashString);
-            sb.EmitPush(chainHash);
-            sb.EmitSysCall("Zoro.AppChain.ChangeValidators");
-
-            SubmitInvocationTransaction(keyPair, sb.ToArray());
-            return true;
-        }
-
-        private RelayResultReason SubmitInvocationTransaction(KeyPair keyPair, byte[] script)
-        {
-            InvocationTransaction tx = new InvocationTransaction
-            {
-                ChainHash = UInt160.Zero,
-                Version = 1,
-                Script = script,
-                Gas = Fixed8.Zero,
-            };
-            tx.Gas -= Fixed8.FromDecimal(10);
-            if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
-            tx.Gas = tx.Gas.Ceiling();
-
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-
-            tx.Attributes = new TransactionAttribute[1];
-            tx.Attributes[0] = new TransactionAttribute();
-            tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
-            tx.Attributes[0].Data = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToArray();
-
-            ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
-            Program.Wallet.Sign(context);
-            if (context.Completed)
-            {
-                tx.Witnesses = context.GetWitnesses();
-
-                RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
-
-                if (reason != RelayResultReason.Succeed)
-                {
-                    Console.WriteLine($"Local Node could not relay transaction: {GetRelayResult(reason)}");
-                }
-                else
-                {
-                    Console.WriteLine($"Transaction has been accepted.");
-                }
-                return reason;
-            }
-
-            return RelayResultReason.UnableToVerify;
-        }
-
-        private bool OnStartAppChainCommand(string[] args)
-        {
-            string hashString = ReadString("appchain hash");
-            ushort port = (ushort)ReadInt("port");
-            ushort wsport = (ushort)ReadInt("websocket port");
-            int startConsensus = ReadInt("start consensus");
-            int save = ReadInt("save to json file");
-
-            bool exists = system.StartAppChain(hashString, port, wsport);
-
-            if (startConsensus == 1 && Program.Wallet != null)
-            {
-                system.StartAppChainConsensus(hashString, Program.Wallet);
-            }
-
-            if (exists)
-            {
-                AppChainSettings settings = new AppChainSettings(hashString, port, wsport, startConsensus == 1);
-
-                AppChainsSettings.Default.Chains.Add(hashString, settings);
-
-                if (save == 1)
-                {
-                    AppChainsSettings.Default.SaveJsonFile();
-                }
-            }
-
-            return true;
-        }
-
-        private bool OnLogCommand(string[] args)
-        {
-            switch (args[1].ToLower())
-            {
-                case "enable":
-                    return OnEnableLogCommand(args);
-                case "disable":
-                    return OnDisableLogCommand(args);
-                default:
-                    return base.OnCommand(args);
-            }
-        }
-
-        private bool OnEnableLogCommand(string[] args)
-        {
-            string source = args[2];
-            if (source == "all")
-            {
-                PluginManager.EnableLogAll();
-            }
-            else
-            {
-                PluginManager.EnableLogSource(source);
-            }
-
-            return true;
-        }
-
-        private bool OnDisableLogCommand(string[] args)
-        {
-            string source = args[2];
-            if (source == "all")
-            {
-                PluginManager.DisableLog();
-            }
-            else
-            {
-                PluginManager.DisableLogSource(source);
-            }
-
-            return true;
         }
     }
 }
