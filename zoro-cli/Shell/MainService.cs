@@ -790,7 +790,7 @@ namespace Zoro.Shell
                     LocalNode[] appchainNodes = LocalNode.AppChainNodes();
                     foreach (var node in appchainNodes)
                     {
-                        if (node != null)
+                        if (node != null && node.Blockchain != null)
                         {
                             Console.WriteLine("====================================================================");
                             ShowState(0, node.Blockchain, node);
@@ -865,7 +865,7 @@ namespace Zoro.Shell
 
             if (disableLog)
             {
-                PluginManager.DisableLog();
+                PluginManager.EnableLog(false);
             }
 
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
