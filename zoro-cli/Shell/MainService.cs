@@ -787,7 +787,7 @@ namespace Zoro.Shell
                         wh = (Program.Wallet.WalletHeight > 0) ? Program.Wallet.WalletHeight - 1 : 0;
                     Console.Clear();
                     ShowState(wh, Blockchain.Root, LocalNode.Root);
-                    LocalNode[] appchainNodes = LocalNode.AppChainNodes();
+                    LocalNode[] appchainNodes = ZoroSystem.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
@@ -796,7 +796,7 @@ namespace Zoro.Shell
                             ShowState(0, node.Blockchain, node);
                         }
                     }
-                    Thread.Sleep(500);
+                    Thread.Sleep(1000);
                 }
             });
             Console.ReadLine();
@@ -919,6 +919,7 @@ namespace Zoro.Shell
 
         protected internal override void OnStop()
         {
+            system.StopAllAppChains();
             system.Dispose();
         }
 
