@@ -778,6 +778,7 @@ namespace Zoro.Shell
         private bool OnShowStateCommand(string[] args)
         {
             bool stop = false;
+            bool detail = (args.Length >= 3 && int.Parse(args[2]) == 1);
             Task.Run(() =>
             {
                 while (!stop)
@@ -786,14 +787,14 @@ namespace Zoro.Shell
                     if (Program.Wallet != null)
                         wh = (Program.Wallet.WalletHeight > 0) ? Program.Wallet.WalletHeight - 1 : 0;
                     Console.Clear();
-                    ShowState(wh, Blockchain.Root, LocalNode.Root);
+                    ShowState(wh, Blockchain.Root, LocalNode.Root, detail);
                     LocalNode[] appchainNodes = ZoroSystem.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
                         {
                             Console.WriteLine("====================================================================");
-                            ShowState(0, node.Blockchain, node);
+                            ShowState(0, node.Blockchain, node, detail);
                         }
                     }
                     Thread.Sleep(1000);
@@ -804,11 +805,16 @@ namespace Zoro.Shell
             return true;
         }
 
-        private void ShowState(uint wh, Blockchain blockchain, LocalNode localNode)
+        private void ShowState(uint wh, Blockchain blockchain, LocalNode localNode, bool printRemoteNode)
         {
             Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {wh}/{blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}");
-            foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
-                Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}");
+            if (printRemoteNode)
+            {
+                foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
+                {
+                    Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}");
+                }
+            }
         }
 
         private bool OnShowUtxoCommand(string[] args)
