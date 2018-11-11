@@ -51,7 +51,7 @@ namespace Zoro.Shell
 
         protected override bool OnCommand(string[] args)
         {
-            if (system.PluginMgr.SendMessage(args)) return true;
+            if (PluginManager.Instance.SendMessage(args)) return true;
             switch (args[0].ToLower())
             {
                 case "broadcast":
@@ -877,7 +877,6 @@ namespace Zoro.Shell
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
             system = new ZoroSystem(UInt160.Zero, store, null);
             system.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
-            system.StartAppChains();
             if (Settings.Default.UnlockWallet.IsActive)
             {
                 try
@@ -892,7 +891,6 @@ namespace Zoro.Shell
                 {
                     OnStartConsensusCommand(null);
                 }
-                system.StartAppChainsConsensus(Program.Wallet);
             }
             if (useRPC)
             {
@@ -984,7 +982,7 @@ namespace Zoro.Shell
                 wallet = nep6wallet;
             }
 
-            system.PluginMgr.SetWallet(wallet);
+            PluginManager.Instance.SetWallet(wallet);
             return wallet;
         }
     }
