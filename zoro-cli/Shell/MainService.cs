@@ -885,7 +885,6 @@ namespace Zoro.Shell
 
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
             system = new ZoroSystem(UInt160.Zero, store, null);
-            system.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
             if (Settings.Default.UnlockWallet.IsActive)
             {
                 try
@@ -896,10 +895,11 @@ namespace Zoro.Shell
                 {
                     Console.WriteLine($"failed to open file \"{Settings.Default.UnlockWallet.Path}\"");
                 }
-                if (Settings.Default.UnlockWallet.StartConsensus && Program.Wallet != null)
-                {
-                    OnStartConsensusCommand(null);
-                }
+            }
+            system.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
+            if (Settings.Default.UnlockWallet.StartConsensus && Program.Wallet != null)
+            {
+                OnStartConsensusCommand(null);
             }
             if (useRPC)
             {
