@@ -6,7 +6,7 @@
     },
     "P2P": {
       "Port": 20005,
-      "WsPort": 20010
+      "WsPort": 20015
     },
     "RPC": {
       "BindAddress": "127.0.0.1",
@@ -14,14 +14,10 @@
       "SslCert": "",
       "SslCertPassword": ""
     },
-    "RPCAgent": {
-      "Port": 20333,
-      "MaxConnections": 10
-    },
     "UnlockWallet": {
-      "Path": "",
-      "Password": "",
-      "StartConsensus": false,
+      "Path": "wallet.json",
+      "Password": "123456",
+      "StartConsensus": true,
       "IsActive": false
     }
   }

@@ -14,10 +14,6 @@
       "SslCert": "",
       "SslCertPassword": ""
     },
-    "RPCAgent": {
-      "Port": 20333,
-      "MaxConnections": 10
-    },
     "UnlockWallet": {
       "Path": "",
       "Password": "",

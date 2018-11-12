@@ -11,6 +11,7 @@ using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
 using Zoro.Wallets.SQLite;
 using Zoro.Plugins;
+using Zoro.AppChain;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,9 +32,15 @@ namespace Zoro.Shell
         private LevelDBStore store;
         private ZoroSystem system;
         private WalletIndexer indexer;
+        private AppChainService appchainService;
 
         protected override string Prompt => "zoro";
         public override string ServiceName => "Zoro-CLI";
+
+        public MainService()
+        {
+            appchainService = new AppChainService(this);
+        }
 
         private WalletIndexer GetIndexer()
         {
@@ -51,7 +58,7 @@ namespace Zoro.Shell
 
         protected override bool OnCommand(string[] args)
         {
-            if (PluginManager.Instance.SendMessage(args)) return true;
+            if (PluginManager.Singleton.SendMessage(args)) return true;
             switch (args[0].ToLower())
             {
                 case "broadcast":
@@ -84,6 +91,8 @@ namespace Zoro.Shell
                     return OnStartCommand(args);
                 case "upgrade":
                     return OnUpgradeCommand(args);
+                case "appchain":
+                    return OnAppChainCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -982,8 +991,14 @@ namespace Zoro.Shell
                 wallet = nep6wallet;
             }
 
-            PluginManager.Instance.SetWallet(wallet);
+            PluginManager.Singleton.SetWallet(wallet);
+            AppChainManager.Singleton.SetWallet(wallet);
             return wallet;
+        }
+
+        private bool OnAppChainCommand(string[] args)
+        {
+            return appchainService.OnAppChainCommand(args);
         }
     }
 }
