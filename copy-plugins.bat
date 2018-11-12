@@ -1,6 +1,3 @@
-xcopy ..\Zoro-Plugins\AppChainPlugin\bin\Debug\netstandard2.0\AppChainPlugin.dll zoro-cli\bin\Debug\netcoreapp2.0\Plugins\ /y /q
-xcopy ..\Zoro-Plugins\AppChainPlugin\AppChainPlugin zoro-cli\bin\Debug\netcoreapp2.0\Plugins\AppChainPlugin\ /y /q
-
 xcopy ..\Zoro-Plugins\RpcAgent\bin\Debug\netstandard2.0\RpcAgent.dll zoro-cli\bin\Debug\netcoreapp2.0\Plugins\ /y /q
 xcopy ..\Zoro-Plugins\RpcAgent\RpcAgent zoro-cli\bin\Debug\netcoreapp2.0\Plugins\RpcAgent\ /y /q
 
