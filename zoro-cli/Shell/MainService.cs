@@ -33,6 +33,7 @@ namespace Zoro.Shell
         private ZoroSystem system;
         private WalletIndexer indexer;
         private AppChainService appchainService;
+        private AppChainManager appchainMgr;
 
         protected override string Prompt => "zoro";
         public override string ServiceName => "Zoro-CLI";
@@ -797,7 +798,7 @@ namespace Zoro.Shell
                         wh = (Program.Wallet.WalletHeight > 0) ? Program.Wallet.WalletHeight - 1 : 0;
                     Console.Clear();
                     ShowState(wh, Blockchain.Root, LocalNode.Root, detail);
-                    LocalNode[] appchainNodes = ZoroSystem.GetAppChainLocalNodes();
+                    LocalNode[] appchainNodes = AppChainManager.Singleton.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
@@ -882,9 +883,9 @@ namespace Zoro.Shell
             {
                 PluginManager.EnableLog(false);
             }
-
+            appchainMgr = new AppChainManager();
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
-            system = new ZoroSystem(UInt160.Zero, store, null);
+            system = new ZoroSystem(UInt160.Zero, store);
             if (Settings.Default.UnlockWallet.IsActive)
             {
                 try
@@ -932,7 +933,7 @@ namespace Zoro.Shell
 
         protected internal override void OnStop()
         {
-            system.StopAllAppChains();
+            appchainMgr.Dispose();
             system.Dispose();
         }
 

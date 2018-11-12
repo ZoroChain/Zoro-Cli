@@ -1,6 +1,7 @@
 ﻿using Zoro.Ledger;
 using Zoro.Wallets;
 using Zoro.Plugins;
+using Zoro.AppChain;
 using Zoro.Network.P2P.Payloads;
 using Zoro.SmartContract;
 using Neo.VM;
@@ -324,7 +325,7 @@ namespace Zoro.Shell
             ushort wsport = (ushort)ReadInt("websocket port");
             int startConsensus = ReadInt("start consensus");
 
-            bool succeed = ZoroSystem.Root.StartAppChain(hashString, port, wsport);
+            bool succeed = AppChainManager.Singleton.StartAppChain(hashString, port, wsport);
 
             if (succeed)
             {
@@ -337,7 +338,7 @@ namespace Zoro.Shell
 
             if (startConsensus == 1 && Program.Wallet != null)
             {
-                ZoroSystem.Root.StartAppChainConsensus(hashString, Program.Wallet);
+                AppChainManager.Singleton.StartAppChainConsensus(hashString, Program.Wallet);
 
                 Console.WriteLine($"Starting consensus service, hash={hashString}");
             }
@@ -351,7 +352,7 @@ namespace Zoro.Shell
 
             UInt160 chainHash = UInt160.Parse(hashString);
 
-            bool succeed = ZoroSystem.StopAppChainSystem(chainHash);
+            bool succeed = AppChainManager.Singleton.StopAppChainSystem(chainHash);
 
             if (succeed)
             {
