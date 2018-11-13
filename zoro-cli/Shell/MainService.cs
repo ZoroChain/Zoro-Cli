@@ -904,7 +904,7 @@ namespace Zoro.Shell
             }
             if (useRPC)
             {
-                system.StartRpc(Settings.Default.RPC.BindAddress,
+                system.StartRpc(IPAddress.Any,
                     Settings.Default.RPC.Port,
                     wallet: Program.Wallet,
                     sslCert: Settings.Default.RPC.SslCert,
