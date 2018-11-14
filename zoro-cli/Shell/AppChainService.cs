@@ -143,7 +143,7 @@ namespace Zoro.Shell
             int numValidators = ReadInt("validator count");
             if (numValidators < 4)
             {
-                Console.WriteLine("cancelled, the input nmber is less then minimum validator count:4.");
+                Console.WriteLine("cancelled, the input number is less then minimum number of validators:4.");
                 return true;
             }
 
@@ -250,7 +250,7 @@ namespace Zoro.Shell
             int numValidators = ReadInt("validator count");
             if (numValidators < 4)
             {
-                Console.WriteLine("cancelled, the input nmber is less then minimum validator count:4.");
+                Console.WriteLine("cancelled, the input number is less then minimum number of validators:4.");
                 return true;
             }
 
