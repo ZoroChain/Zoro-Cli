@@ -725,7 +725,7 @@ namespace Zoro.Shell
                     return true;
                 }
                 Fixed8 fee = args.Length >= 5 ? Fixed8.Parse(args[4]) : Fixed8.Zero;
-                tx = Program.Wallet.MakeTransaction(null, new[]
+                tx = Program.Wallet.MakeTransaction(Blockchain.Root, null, new[]
                 {
                     new TransferOutput
                     {
