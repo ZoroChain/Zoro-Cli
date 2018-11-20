@@ -174,7 +174,7 @@ namespace Zoro.Shell
             sb.EmitPush(chainHash);
             sb.EmitSysCall("Zoro.AppChain.Create");
 
-            RelayResultReason reason = SubmitInvocationTransaction(keyPair, sb.ToArray());
+            RelayResultReason reason = SubmitInvocationTransaction(UInt160.Zero, keyPair, sb.ToArray());
 
             if (reason == RelayResultReason.Succeed)
             {
@@ -234,10 +234,9 @@ namespace Zoro.Shell
             sb.EmitPush(numSeeds);
 
             UInt160 chainHash = UInt160.Parse(hashString);
-            sb.EmitPush(chainHash);
             sb.EmitSysCall("Zoro.AppChain.ChangeSeedList");
 
-            SubmitInvocationTransaction(keyPair, sb.ToArray());
+            SubmitInvocationTransaction(chainHash, keyPair, sb.ToArray());
             return true;
         }
 
@@ -291,15 +290,18 @@ namespace Zoro.Shell
             sb.EmitPush(numValidators);
 
             UInt160 chainHash = UInt160.Parse(hashString);
-            sb.EmitPush(chainHash);
             sb.EmitSysCall("Zoro.AppChain.ChangeValidators");
 
-            SubmitInvocationTransaction(keyPair, sb.ToArray());
+            SubmitInvocationTransaction(chainHash, keyPair, sb.ToArray());
             return true;
         }
 
-        private RelayResultReason SubmitInvocationTransaction(KeyPair keyPair, byte[] script)
+        private RelayResultReason SubmitInvocationTransaction(UInt160 chainHash, KeyPair keyPair, byte[] script)
         {
+            ZoroSystem system = AppChainManager.Singleton.GetZoroSystem(chainHash);
+
+            Blockchain blockchain = AppChainManager.Singleton.GetBlockchain(chainHash);
+
             InvocationTransaction tx = new InvocationTransaction
             {
                 ChainHash = UInt160.Zero,
@@ -319,13 +321,13 @@ namespace Zoro.Shell
             tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
             tx.Attributes[0].Data = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToArray();
 
-            ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
+            ContractParametersContext context = new ContractParametersContext(tx, blockchain);
             Program.Wallet.Sign(context);
             if (context.Completed)
             {
                 tx.Witnesses = context.GetWitnesses();
 
-                RelayResultReason reason = ZoroSystem.Root.Blockchain.Ask<RelayResultReason>(tx).Result;
+                RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
 
                 if (reason != RelayResultReason.Succeed)
                 {
