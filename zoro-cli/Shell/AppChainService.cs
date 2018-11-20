@@ -7,6 +7,8 @@ using Zoro.SmartContract;
 using Neo.VM;
 using System;
 using System.Linq;
+using System.Numerics;
+using System.Security.Cryptography;
 using Akka.Actor;
 
 namespace Zoro.Shell
@@ -215,6 +217,16 @@ namespace Zoro.Shell
 
             ScriptBuilder sb = new ScriptBuilder();
 
+            // 加入随机数，避免交易ID重复
+            byte[] randomBytes = new byte[32];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            BigInteger randomNum = new BigInteger(randomBytes);
+            sb.EmitPush(randomNum);
+            sb.Emit(OpCode.DROP);
+
             for (int i = 0; i < numSeeds; i++)
             {
                 sb.EmitPush(seedList[i]);
@@ -261,6 +273,17 @@ namespace Zoro.Shell
             }
 
             ScriptBuilder sb = new ScriptBuilder();
+
+            // 加入随机数，避免交易ID重复
+            byte[] randomBytes = new byte[32];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            BigInteger randomNum = new BigInteger(randomBytes);
+            sb.EmitPush(randomNum);
+            sb.Emit(OpCode.DROP);
+
             for (int i = 0; i < numValidators; i++)
             {
                 sb.EmitPush(validators[i]);
