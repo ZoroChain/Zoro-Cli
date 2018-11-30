@@ -3,6 +3,7 @@ using Zoro.IO;
 using Zoro.Ledger;
 using Zoro.Network.P2P;
 using Zoro.Network.P2P.Payloads;
+using Zoro.Network.RPC;
 using Zoro.Persistence;
 using Zoro.Persistence.LevelDB;
 using Zoro.Services;
@@ -30,7 +31,9 @@ namespace Zoro.Shell
         private const string PeerStatePath = "peers.dat";
 
         private LevelDBStore store;
-        private ZoroSystem system;
+        private ZoroActorSystem system;
+        private PluginManager pluginmgr;
+        private RpcServer rpcserver;
         private WalletIndexer indexer;
         private AppChainService appchainService;
         private AppChainManager appchainMgr;
@@ -143,7 +146,7 @@ namespace Zoro.Shell
                     Console.WriteLine($"Command \"{command}\" is not supported.");
                     return true;
             }
-            system.LocalNode.Tell(Message.Create(command, payload));
+            ZoroSystem.Root.LocalNode.Tell(Message.Create(command, payload));
             return true;
         }
 
@@ -170,7 +173,7 @@ namespace Zoro.Shell
                 }
                 context.Verifiable.Witnesses = context.GetWitnesses();
                 IInventory inventory = (IInventory)context.Verifiable;
-                system.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+                ZoroSystem.Root.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
                 Console.WriteLine($"Data relay success, the hash is shown as follows:\r\n{inventory.Hash}");
             }
             catch (Exception e)
@@ -514,7 +517,7 @@ namespace Zoro.Shell
         {
             if (NoWallet()) return true;
 
-            Coins coins = new Coins(Program.Wallet, system);
+            Coins coins = new Coins(Program.Wallet, ZoroSystem.Root);
 
             switch (args[1].ToLower())
             {
@@ -555,7 +558,7 @@ namespace Zoro.Shell
         {
             if (NoWallet()) return true;
 
-            Coins coins = new Coins(Program.Wallet, system);
+            Coins coins = new Coins(Program.Wallet, ZoroSystem.Root);
             Console.WriteLine($"unavailable: {coins.UnavailableBonus().ToString()}");
             Console.WriteLine($"  available: {coins.AvailableBonus().ToString()}");
             return true;
@@ -746,7 +749,7 @@ namespace Zoro.Shell
             {
                 tx.Witnesses = context.GetWitnesses();
                 Program.Wallet.ApplyTransaction(tx);
-                system.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
+                ZoroSystem.Root.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
                 Console.WriteLine($"TXID: {tx.Hash}");
             }
             else
@@ -883,9 +886,12 @@ namespace Zoro.Shell
             {
                 PluginManager.EnableLog(false);
             }
+            pluginmgr = new PluginManager();
             appchainMgr = new AppChainManager();
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
-            system = new ZoroSystem(UInt160.Zero, store);
+            system = new ZoroActorSystem(UInt160.Zero, store);
+            pluginmgr.LoadPlugins();
+
             if (Settings.Default.UnlockWallet.IsActive)
             {
                 try
@@ -904,9 +910,9 @@ namespace Zoro.Shell
             }
             if (useRPC)
             {
-                system.StartRpc(IPAddress.Any,
+                rpcserver = new RpcServer(Program.Wallet);
+                rpcserver.Start(IPAddress.Any,
                     Settings.Default.RPC.Port,
-                    wallet: Program.Wallet,
                     sslCert: Settings.Default.RPC.SslCert,
                     password: Settings.Default.RPC.SslCertPassword);
             }
@@ -933,8 +939,12 @@ namespace Zoro.Shell
 
         protected internal override void OnStop()
         {
+            rpcserver?.Dispose();
+            pluginmgr.Dispose();
             appchainMgr.Dispose();
             system.Dispose();
+            Console.Write("Waiting for closing zoro system");
+            Console.ReadLine();
         }
 
         private bool OnUpgradeCommand(string[] args)
