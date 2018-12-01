@@ -298,9 +298,9 @@ namespace Zoro.Shell
 
         private RelayResultReason SubmitInvocationTransaction(UInt160 chainHash, KeyPair keyPair, byte[] script)
         {
-            ZoroSystem system = AppChainManager.Singleton.GetZoroSystem(chainHash);
+            ZoroSystem system = ZoroChainSystem.Singleton.GetZoroSystem(chainHash);
 
-            Blockchain blockchain = AppChainManager.Singleton.GetBlockchain(chainHash);
+            Blockchain blockchain = ZoroChainSystem.Singleton.GetBlockchain(chainHash);
 
             InvocationTransaction tx = new InvocationTransaction
             {
@@ -350,7 +350,7 @@ namespace Zoro.Shell
             ushort wsport = (ushort)ReadInt("websocket port");
             int startConsensus = ReadInt("start consensus");
 
-            bool succeed = AppChainManager.Singleton.StartAppChain(hashString, port, wsport);
+            bool succeed = ZoroChainSystem.Singleton.StartAppChain(hashString, port, wsport);
 
             if (succeed)
             {
@@ -363,7 +363,7 @@ namespace Zoro.Shell
 
             if (startConsensus == 1 && Program.Wallet != null)
             {
-                AppChainManager.Singleton.StartAppChainConsensus(hashString, Program.Wallet);
+                ZoroChainSystem.Singleton.StartAppChainConsensus(hashString, Program.Wallet);
 
                 Console.WriteLine($"Starting consensus service, hash={hashString}");
             }
@@ -377,7 +377,7 @@ namespace Zoro.Shell
 
             UInt160 chainHash = UInt160.Parse(hashString);
 
-            bool succeed = AppChainManager.Singleton.StopAppChainSystem(chainHash);
+            bool succeed = ZoroChainSystem.Singleton.StopAppChainSystem(chainHash);
 
             if (succeed)
             {

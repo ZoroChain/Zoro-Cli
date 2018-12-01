@@ -31,12 +31,9 @@ namespace Zoro.Shell
         private const string PeerStatePath = "peers.dat";
 
         private LevelDBStore store;
-        private ZoroActorSystem system;
-        private PluginManager pluginmgr;
-        private RpcServer rpcserver;
+        private ZoroChainSystem system;
         private WalletIndexer indexer;
         private AppChainService appchainService;
-        private AppChainManager appchainMgr;
 
         protected override string Prompt => "zoro";
         public override string ServiceName => "Zoro-CLI";
@@ -801,7 +798,7 @@ namespace Zoro.Shell
                         wh = (Program.Wallet.WalletHeight > 0) ? Program.Wallet.WalletHeight - 1 : 0;
                     Console.Clear();
                     ShowState(wh, Blockchain.Root, LocalNode.Root, detail);
-                    LocalNode[] appchainNodes = AppChainManager.Singleton.GetAppChainLocalNodes();
+                    LocalNode[] appchainNodes = ZoroChainSystem.Singleton.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
@@ -886,11 +883,9 @@ namespace Zoro.Shell
             {
                 PluginManager.EnableLog(false);
             }
-            pluginmgr = new PluginManager();
-            appchainMgr = new AppChainManager();
+
             store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
-            system = new ZoroActorSystem(UInt160.Zero, store);
-            pluginmgr.LoadPlugins();
+            system = new ZoroChainSystem(store);
 
             if (Settings.Default.UnlockWallet.IsActive)
             {
@@ -903,16 +898,16 @@ namespace Zoro.Shell
                     Console.WriteLine($"failed to open file \"{Settings.Default.UnlockWallet.Path}\"");
                 }
             }
-            system.StartNode(Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
+            system.StartNode(UInt160.Zero, Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
             if (Settings.Default.UnlockWallet.StartConsensus && Program.Wallet != null)
             {
                 OnStartConsensusCommand(null);
             }
             if (useRPC)
             {
-                rpcserver = new RpcServer(Program.Wallet);
-                rpcserver.Start(IPAddress.Any,
+                system.StartRpc(IPAddress.Any,
                     Settings.Default.RPC.Port,
+                    wallet: Program.Wallet,
                     sslCert: Settings.Default.RPC.SslCert,
                     password: Settings.Default.RPC.SslCertPassword);
             }
@@ -939,11 +934,7 @@ namespace Zoro.Shell
 
         protected internal override void OnStop()
         {
-            rpcserver?.Dispose();
-            pluginmgr.Dispose();
-            appchainMgr.Dispose();
             system.Dispose();
-            Console.Write("Waiting for closing zoro system");
             Console.ReadLine();
         }
 
@@ -1003,7 +994,7 @@ namespace Zoro.Shell
             }
 
             PluginManager.Singleton.SetWallet(wallet);
-            AppChainManager.Singleton.SetWallet(wallet);
+            ZoroChainSystem.Singleton.SetWallet(wallet);
             return wallet;
         }
 
