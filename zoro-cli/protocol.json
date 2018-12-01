@@ -1,5 +1,6 @@
 ﻿{
   "ProtocolConfiguration": {
+    "NetworkType": "Internet",
     "Magic": 25440251,
     "AddressVersion": 23,
     "SecondsPerBlock": 1,
