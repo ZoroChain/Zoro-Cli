@@ -1,7 +1,6 @@
 ﻿using Zoro.Ledger;
 using Zoro.Wallets;
 using Zoro.Plugins;
-using Zoro.AppChain;
 using Zoro.Network.P2P.Payloads;
 using Zoro.SmartContract;
 using Neo.VM;
@@ -15,11 +14,8 @@ namespace Zoro.Shell
 {
     internal class AppChainService
     {
-        private MainService service;
-
-        public AppChainService(MainService service)
+        public AppChainService()
         {
-            this.service = service;
         }
 
         private void Log(string message, LogLevel level = LogLevel.Info)
@@ -107,7 +103,7 @@ namespace Zoro.Shell
                 case RelayResultReason.Invalid:
                     return "Block or transaction validation failed.";
                 default:
-                    return "Unkown error.";
+                    return "Unknown error.";
             }
         }
 

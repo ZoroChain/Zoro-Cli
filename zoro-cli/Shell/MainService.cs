@@ -3,7 +3,6 @@ using Zoro.IO;
 using Zoro.Ledger;
 using Zoro.Network.P2P;
 using Zoro.Network.P2P.Payloads;
-using Zoro.Network.RPC;
 using Zoro.Persistence;
 using Zoro.Persistence.LevelDB;
 using Zoro.Services;
@@ -12,7 +11,6 @@ using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
 using Zoro.Wallets.SQLite;
 using Zoro.Plugins;
-using Zoro.AppChain;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,7 +38,7 @@ namespace Zoro.Shell
 
         public MainService()
         {
-            appchainService = new AppChainService(this);
+            appchainService = new AppChainService();
         }
 
         private WalletIndexer GetIndexer()
@@ -78,14 +76,10 @@ namespace Zoro.Shell
                     return OnImportCommand(args);
                 case "list":
                     return OnListCommand(args);
-                case "claim":
-                    return OnClaimCommand(args);
                 case "open":
                     return OnOpenCommand(args);
                 case "rebuild":
                     return OnRebuildCommand(args);
-                case "send":
-                    return OnSendCommand(args);
                 case "show":
                     return OnShowCommand(args);
                 case "start":
@@ -102,32 +96,40 @@ namespace Zoro.Shell
         private bool OnBroadcastCommand(string[] args)
         {
             string command = args[1].ToLower();
+            string hashString = args[2];
+            ZoroSystem zoroSystem = system.GetZoroSystem(hashString);
+            Blockchain blockchain = system.GetBlockchain(hashString);
+            if (zoroSystem == null || blockchain == null)
+            {
+                Console.WriteLine($"Unknown blockchain hash {hashString}.");
+                return true;
+            }
             ISerializable payload = null;
             switch (command)
             {
                 case "addr":
-                    payload = AddrPayload.Create(NetworkAddressWithTime.Create(new IPEndPoint(IPAddress.Parse(args[2]), ushort.Parse(args[3])), NetworkAddressWithTime.NODE_NETWORK, DateTime.UtcNow.ToTimestamp()));
+                    payload = AddrPayload.Create(NetworkAddressWithTime.Create(new IPEndPoint(IPAddress.Parse(args[3]), ushort.Parse(args[4])), NetworkAddressWithTime.NODE_NETWORK, DateTime.UtcNow.ToTimestamp()));
                     break;
                 case "block":
-                    if (args[2].Length == 64 || args[2].Length == 66)
-                        payload = Blockchain.Root.GetBlock(UInt256.Parse(args[2]));
+                    if (args[3].Length == 64 || args[3].Length == 66)
+                        payload = blockchain.GetBlock(UInt256.Parse(args[3]));
                     else
-                        payload = Blockchain.Root.Store.GetBlock(uint.Parse(args[2]));
+                        payload = blockchain.Store.GetBlock(uint.Parse(args[3]));
                     break;
                 case "getblocks":
                 case "getheaders":
-                    payload = GetBlocksPayload.Create(UInt256.Parse(args[2]));
+                    payload = GetBlocksPayload.Create(UInt256.Parse(args[3]));
                     break;
                 case "getdata":
                 case "inv":
-                    payload = InvPayload.Create(Enum.Parse<InventoryType>(args[2], true), UInt256.Parse(args[3]));
+                    payload = InvPayload.Create(Enum.Parse<InventoryType>(args[3], true), UInt256.Parse(args[4]));
                     break;
                 case "getdatagroup":
                 case "invgroup":
-                    payload = InvGroupPayload.Create(Enum.Parse<InventoryType>(args[2], true), args.Skip(3).Select(UInt256.Parse).ToArray());
+                    payload = InvGroupPayload.Create(Enum.Parse<InventoryType>(args[3], true), args.Skip(4).Select(UInt256.Parse).ToArray());
                     break;
                 case "tx":
-                    payload = Blockchain.Root.GetTransaction(UInt256.Parse(args[2]));
+                    payload = blockchain.GetTransaction(UInt256.Parse(args[3]));
                     break;
                 case "alert":
                 case "consensus":
@@ -143,18 +145,26 @@ namespace Zoro.Shell
                     Console.WriteLine($"Command \"{command}\" is not supported.");
                     return true;
             }
-            ZoroSystem.Root.LocalNode.Tell(Message.Create(command, payload));
+            zoroSystem.LocalNode.Tell(Message.Create(command, payload));
             return true;
         }
 
         private bool OnRelayCommand(string[] args)
         {
-            if (args.Length < 2)
+            if (args.Length < 3)
             {
                 Console.WriteLine("You must input JSON object to relay.");
                 return true;
             }
-            var jsonObjectToRelay = string.Join(string.Empty, args.Skip(1));
+            string hashString = args[1];
+            ZoroSystem zoroSystem = system.GetZoroSystem(hashString);
+            if (zoroSystem == null)
+            {
+                Console.WriteLine($"Unknown blockchain hash {hashString}.");
+                return true;
+            }
+
+            var jsonObjectToRelay = string.Join(string.Empty, args.Skip(2));
             if (string.IsNullOrWhiteSpace(jsonObjectToRelay))
             {
                 Console.WriteLine("You must input JSON object to relay.");
@@ -170,7 +180,7 @@ namespace Zoro.Shell
                 }
                 context.Verifiable.Witnesses = context.GetWitnesses();
                 IInventory inventory = (IInventory)context.Verifiable;
-                ZoroSystem.Root.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
+                zoroSystem.LocalNode.Tell(new LocalNode.Relay { Inventory = inventory });
                 Console.WriteLine($"Data relay success, the hash is shown as follows:\r\n{inventory.Hash}");
             }
             catch (Exception e)
@@ -510,57 +520,6 @@ namespace Zoro.Shell
             }
         }
 
-        private bool OnClaimCommand(string[] args)
-        {
-            if (NoWallet()) return true;
-
-            Coins coins = new Coins(Program.Wallet, ZoroSystem.Root);
-
-            switch (args[1].ToLower())
-            {
-                case "gas":
-                    if (args.Length > 2)
-                    {
-                        switch (args[2].ToLower())
-                        {
-                            case "all":
-                                ClaimTransaction[] txs = coins.ClaimAll();
-                                if (txs.Length > 0)
-                                {
-                                    foreach (ClaimTransaction tx in txs)
-                                    {
-                                        Console.WriteLine($"Tranaction Suceeded: {tx.Hash}");
-                                    }
-                                }
-                                return true;
-                            default:
-                                return base.OnCommand(args);
-                        }
-                    }
-                    else
-                    {
-                        ClaimTransaction tx = coins.Claim();
-                        if (tx != null)
-                        {
-                            Console.WriteLine($"Tranaction Suceeded: {tx.Hash}");
-                        }
-                        return true;
-                    }
-                default:
-                    return base.OnCommand(args);
-            }
-        }
-
-        private bool OnShowGasCommand(string[] args)
-        {
-            if (NoWallet()) return true;
-
-            Coins coins = new Coins(Program.Wallet, ZoroSystem.Root);
-            Console.WriteLine($"unavailable: {coins.UnavailableBonus().ToString()}");
-            Console.WriteLine($"  available: {coins.AvailableBonus().ToString()}");
-            return true;
-        }
-
         private bool OnListKeyCommand(string[] args)
         {
             if (NoWallet()) return true;
@@ -661,108 +620,10 @@ namespace Zoro.Shell
             return true;
         }
 
-        private bool OnSendCommand(string[] args)
-        {
-            if (args.Length < 4 || args.Length > 5)
-            {
-                Console.WriteLine("error");
-                return true;
-            }
-            if (NoWallet()) return true;
-            string password = ReadPassword("password");
-            if (password.Length == 0)
-            {
-                Console.WriteLine("cancelled");
-                return true;
-            }
-            if (!Program.Wallet.VerifyPassword(password))
-            {
-                Console.WriteLine("Incorrect password");
-                return true;
-            }
-            UIntBase assetId;
-            switch (args[1].ToLower())
-            {
-                case "neo":
-                case "ans":
-                    assetId = Blockchain.GoverningToken.Hash;
-                    break;
-                case "gas":
-                case "anc":
-                    assetId = Blockchain.UtilityToken.Hash;
-                    break;
-                default:
-                    assetId = UIntBase.Parse(args[1]);
-                    break;
-            }
-            UInt160 scriptHash = args[2].ToScriptHash();
-            bool isSendAll = string.Equals(args[3], "all", StringComparison.OrdinalIgnoreCase);
-            Transaction tx;
-            if (isSendAll)
-            {
-                Coin[] coins = Program.Wallet.FindUnspentCoins().Where(p => p.Output.AssetId.Equals(assetId)).ToArray();
-                tx = new ContractTransaction
-                {
-                    Attributes = new TransactionAttribute[0],
-                    Inputs = coins.Select(p => p.Reference).ToArray(),
-                    Outputs = new[]
-                    {
-                        new TransactionOutput
-                        {
-                            AssetId = (UInt256)assetId,
-                            Value = coins.Sum(p => p.Output.Value),
-                            ScriptHash = scriptHash
-                        }
-                    }
-                };
-            }
-            else
-            {
-                AssetDescriptor descriptor = new AssetDescriptor(assetId);
-                if (!BigDecimal.TryParse(args[3], descriptor.Decimals, out BigDecimal amount))
-                {
-                    Console.WriteLine("Incorrect Amount Format");
-                    return true;
-                }
-                Fixed8 fee = args.Length >= 5 ? Fixed8.Parse(args[4]) : Fixed8.Zero;
-                tx = Program.Wallet.MakeTransaction(Blockchain.Root, null, new[]
-                {
-                    new TransferOutput
-                    {
-                        AssetId = assetId,
-                        Value = amount,
-                        ScriptHash = scriptHash
-                    }
-                }, fee: fee);
-                if (tx == null)
-                {
-                    Console.WriteLine("Insufficient funds");
-                    return true;
-                }
-            }
-            ContractParametersContext context = new ContractParametersContext(tx, Blockchain.Root);
-            Program.Wallet.Sign(context);
-            if (context.Completed)
-            {
-                tx.Witnesses = context.GetWitnesses();
-                Program.Wallet.ApplyTransaction(tx);
-                ZoroSystem.Root.LocalNode.Tell(new LocalNode.Relay { Inventory = tx });
-                Console.WriteLine($"TXID: {tx.Hash}");
-            }
-            else
-            {
-                Console.WriteLine("SignatureContext:");
-                Console.WriteLine(context.ToString());
-            }
-            return true;
-        }
-
         private bool OnShowCommand(string[] args)
         {
             switch (args[1].ToLower())
             {
-                case "gas":
-                    return OnShowGasCommand(args);
                 case "pool":
                     return OnShowPoolCommand(args);
                 case "state":
@@ -935,6 +796,7 @@ namespace Zoro.Shell
         protected internal override void OnStop()
         {
             system.Dispose();
+            Console.WriteLine("Press enter key to quit.");
             Console.ReadLine();
         }
 
