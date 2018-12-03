@@ -628,8 +628,6 @@ namespace Zoro.Shell
                     return OnShowPoolCommand(args);
                 case "state":
                     return OnShowStateCommand(args);
-                case "utxo":
-                    return OnShowUtxoCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -686,39 +684,6 @@ namespace Zoro.Shell
                     Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}");
                 }
             }
-        }
-
-        private bool OnShowUtxoCommand(string[] args)
-        {
-            if (NoWallet()) return true;
-            IEnumerable<Coin> coins = Program.Wallet.FindUnspentCoins();
-            if (args.Length >= 3)
-            {
-                UInt256 assetId;
-                switch (args[2].ToLower())
-                {
-                    case "neo":
-                    case "ans":
-                        assetId = Blockchain.GoverningToken.Hash;
-                        break;
-                    case "gas":
-                    case "anc":
-                        assetId = Blockchain.UtilityToken.Hash;
-                        break;
-                    default:
-                        assetId = UInt256.Parse(args[2]);
-                        break;
-                }
-                coins = coins.Where(p => p.Output.AssetId.Equals(assetId));
-            }
-            Coin[] coins_array = coins.ToArray();
-            const int MAX_SHOW = 100;
-            for (int i = 0; i < coins_array.Length && i < MAX_SHOW; i++)
-                Console.WriteLine($"{coins_array[i].Reference.PrevHash}:{coins_array[i].Reference.PrevIndex}");
-            if (coins_array.Length > MAX_SHOW)
-                Console.WriteLine($"({coins_array.Length - MAX_SHOW} more)");
-            Console.WriteLine($"total: {coins_array.Length} UTXOs");
-            return true;
         }
 
         protected internal override void OnStart(string[] args)
