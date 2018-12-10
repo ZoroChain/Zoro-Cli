@@ -303,6 +303,7 @@ namespace Zoro.Shell
                         WalletAccount account = Program.Wallet.CreateAccount();
                         Console.WriteLine($"address: {account.Address}");
                         Console.WriteLine($" pubkey: {account.GetKey().PublicKey.EncodePoint(true).ToHexString()}");
+                        ZoroChainSystem.Singleton.SetWallet(Program.Wallet);
                     }
                     break;
                 case ".json":
@@ -314,6 +315,7 @@ namespace Zoro.Shell
                         Program.Wallet = wallet;
                         Console.WriteLine($"address: {account.Address}");
                         Console.WriteLine($" pubkey: {account.GetKey().PublicKey.EncodePoint(true).ToHexString()}");
+                        ZoroChainSystem.Singleton.SetWallet(Program.Wallet);
                     }
                     break;
                 default:
@@ -855,7 +857,6 @@ namespace Zoro.Shell
                 wallet = nep6wallet;
             }
 
-            PluginManager.Singleton.SetWallet(wallet);
             ZoroChainSystem.Singleton.SetWallet(wallet);
             return wallet;
         }
