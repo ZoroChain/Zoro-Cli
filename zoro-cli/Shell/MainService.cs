@@ -9,7 +9,6 @@ using Zoro.Services;
 using Zoro.SmartContract;
 using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
-using Zoro.Wallets.SQLite;
 using Zoro.Plugins;
 using System;
 using System.Collections.Generic;
@@ -30,7 +29,6 @@ namespace Zoro.Shell
 
         private LevelDBStore store;
         private ZoroChainSystem system;
-        private WalletIndexer indexer;
         private AppChainService appchainService;
 
         protected override string Prompt => "zoro";
@@ -39,13 +37,6 @@ namespace Zoro.Shell
         public MainService()
         {
             appchainService = new AppChainService();
-        }
-
-        private WalletIndexer GetIndexer()
-        {
-            if (indexer is null)
-                indexer = new WalletIndexer(Settings.Default.Paths.Index);
-            return indexer;
         }
 
         private static bool NoWallet()
@@ -78,14 +69,10 @@ namespace Zoro.Shell
                     return OnListCommand(args);
                 case "open":
                     return OnOpenCommand(args);
-                case "rebuild":
-                    return OnRebuildCommand(args);
                 case "show":
                     return OnShowCommand(args);
                 case "start":
                     return OnStartCommand(args);
-                case "upgrade":
-                    return OnUpgradeCommand(args);
                 case "appchain":
                     return OnAppChainCommand(args);
                 default:
@@ -297,17 +284,9 @@ namespace Zoro.Shell
             }
             switch (Path.GetExtension(path))
             {
-                case ".db3":
-                    {
-                        Program.Wallet = UserWallet.Create(GetIndexer(), path, password);
-                        WalletAccount account = Program.Wallet.CreateAccount();
-                        Console.WriteLine($"address: {account.Address}");
-                        Console.WriteLine($" pubkey: {account.GetKey().PublicKey.EncodePoint(true).ToHexString()}");
-                    }
-                    break;
                 case ".json":
                     {
-                        NEP6Wallet wallet = new NEP6Wallet(GetIndexer(), path);
+                        NEP6Wallet wallet = new NEP6Wallet(path);
                         wallet.Unlock(password);
                         WalletAccount account = wallet.CreateAccount();
                         wallet.Save();
@@ -541,21 +520,29 @@ namespace Zoro.Shell
         }
 
         private bool OnListAssetCommand(string[] args)
-        {
+        {            
             if (NoWallet()) return true;
-            foreach (var item in Program.Wallet.GetCoins().Where(p => !p.State.HasFlag(CoinState.Spent)).GroupBy(p => p.Output.AssetId, (k, g) => new
+            try
             {
-                Asset = Blockchain.Root.Store.GetAssets().TryGet(k),
-                Balance = g.Sum(p => p.Output.Value),
-                Confirmed = g.Where(p => p.State.HasFlag(CoinState.Confirmed)).Sum(p => p.Output.Value)
-            }))
-            {
-                Console.WriteLine($"       id:{item.Asset.AssetId}");
-                Console.WriteLine($"     name:{item.Asset.GetName()}");
-                Console.WriteLine($"  balance:{item.Balance}");
-                Console.WriteLine($"confirmed:{item.Confirmed}");
-                Console.WriteLine();
+                UInt160 chainHash = args.Length == 3 ? UInt160.Parse(args[2]) : UInt160.Zero;
+
+                foreach (var item in Program.Wallet.GetCoins(chainHash).GroupBy(p => p.AssetId, (k, g) => new
+                {
+                    Asset = Blockchain.Root.Store.GetAssets().TryGet(k),
+                    Balance = g.Sum(p => p.Balance)
+                }))
+                {
+                    Console.WriteLine($"       id:{item.Asset.AssetId}");
+                    Console.WriteLine($"     name:{item.Asset.GetName()}");
+                    Console.WriteLine($"  balance:{item.Balance}");
+                    Console.WriteLine();
+                }
             }
+            catch (Exception)
+            {
+                return true;
+            }
+
             return true;
         }
 
@@ -594,29 +581,12 @@ namespace Zoro.Shell
             }
             try
             {
-                Program.Wallet = OpenWallet(GetIndexer(), path, password);
+                Program.Wallet = OpenWallet(path, password);
             }
             catch (CryptographicException)
             {
                 Console.WriteLine($"failed to open file \"{path}\"");
             }
-            return true;
-        }
-
-        private bool OnRebuildCommand(string[] args)
-        {
-            switch (args[1].ToLower())
-            {
-                case "index":
-                    return OnRebuildIndexCommand(args);
-                default:
-                    return base.OnCommand(args);
-            }
-        }
-
-        private bool OnRebuildIndexCommand(string[] args)
-        {
-            GetIndexer().RebuildIndex();
             return true;
         }
 
@@ -652,18 +622,15 @@ namespace Zoro.Shell
             {
                 while (!stop)
                 {
-                    uint wh = 0;
-                    if (Program.Wallet != null)
-                        wh = (Program.Wallet.WalletHeight > 0) ? Program.Wallet.WalletHeight - 1 : 0;
                     Console.Clear();
-                    ShowState(wh, Blockchain.Root, LocalNode.Root, detail);
+                    ShowState(Blockchain.Root, LocalNode.Root, detail);
                     LocalNode[] appchainNodes = ZoroChainSystem.Singleton.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
                         {
                             Console.WriteLine("====================================================================");
-                            ShowState(0, node.Blockchain, node, detail);
+                            ShowState(node.Blockchain, node, detail);
                         }
                     }
                     Thread.Sleep(1000);
@@ -674,9 +641,9 @@ namespace Zoro.Shell
             return true;
         }
 
-        private void ShowState(uint wh, Blockchain blockchain, LocalNode localNode, bool printRemoteNode)
+        private void ShowState(Blockchain blockchain, LocalNode localNode, bool printRemoteNode)
         {
-            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {wh}/{blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}");
+            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}");
             if (printRemoteNode)
             {
                 foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
@@ -717,7 +684,7 @@ namespace Zoro.Shell
             {
                 try
                 {
-                    Program.Wallet = OpenWallet(GetIndexer(), Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
+                    Program.Wallet = OpenWallet(Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
                 }
                 catch (CryptographicException)
                 {
@@ -765,63 +732,18 @@ namespace Zoro.Shell
             Console.ReadLine();
         }
 
-        private bool OnUpgradeCommand(string[] args)
+        private Wallet OpenWallet(string path, string password)
         {
-            switch (args[1].ToLower())
+            Wallet wallet = null;
+            if (Path.GetExtension(path) == ".json")
             {
-                case "wallet":
-                    return OnUpgradeWalletCommand(args);
-                default:
-                    return base.OnCommand(args);
-            }
-        }
-
-        private bool OnUpgradeWalletCommand(string[] args)
-        {
-            if (args.Length < 3)
-            {
-                Console.WriteLine("error");
-                return true;
-            }
-            string path = args[2];
-            if (Path.GetExtension(path) != ".db3")
-            {
-                Console.WriteLine("Can't upgrade the wallet file.");
-                return true;
-            }
-            if (!File.Exists(path))
-            {
-                Console.WriteLine("File does not exist.");
-                return true;
-            }
-            string password = ReadPassword("password");
-            if (password.Length == 0)
-            {
-                Console.WriteLine("cancelled");
-                return true;
-            }
-            string path_new = Path.ChangeExtension(path, ".json");
-            NEP6Wallet.Migrate(GetIndexer(), path_new, path, password).Save();
-            Console.WriteLine($"Wallet file upgrade complete. New wallet file has been auto-saved at: {path_new}");
-            return true;
-        }
-
-        private Wallet OpenWallet(WalletIndexer indexer, string path, string password)
-        {
-            Wallet wallet;
-            if (Path.GetExtension(path) == ".db3")
-            {
-                wallet = UserWallet.Open(indexer, path, password);
-            }
-            else
-            {
-                NEP6Wallet nep6wallet = new NEP6Wallet(indexer, path);
+                NEP6Wallet nep6wallet = new NEP6Wallet(path);
                 nep6wallet.Unlock(password);
                 wallet = nep6wallet;
+
+                ZoroChainSystem.Singleton.SetWallet(wallet);
             }
 
-            PluginManager.Singleton.SetWallet(wallet);
-            ZoroChainSystem.Singleton.SetWallet(wallet);
             return wallet;
         }
 

@@ -309,9 +309,6 @@ namespace Zoro.Shell
             if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
             tx.Gas = tx.Gas.Ceiling();
 
-            tx.Inputs = new CoinReference[0];
-            tx.Outputs = new TransactionOutput[0];
-
             tx.Attributes = new TransactionAttribute[1];
             tx.Attributes[0] = new TransactionAttribute();
             tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
