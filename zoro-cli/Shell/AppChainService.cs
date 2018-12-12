@@ -303,11 +303,8 @@ namespace Zoro.Shell
                 ChainHash = UInt160.Zero,
                 Version = 1,
                 Script = script,
-                Gas = Fixed8.Zero,
+                GasLimit = InvocationTransaction.GetGasLimit(Fixed8.Zero),
             };
-            tx.Gas -= Fixed8.FromDecimal(10);
-            if (tx.Gas < Fixed8.Zero) tx.Gas = Fixed8.Zero;
-            tx.Gas = tx.Gas.Ceiling();
 
             tx.Attributes = new TransactionAttribute[1];
             tx.Attributes[0] = new TransactionAttribute();
