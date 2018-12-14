@@ -1,5 +1,6 @@
 ﻿{
   "ProtocolConfiguration": {
+    "NetworkType": "LAN",
     "Magic": 58225482,
     "AddressVersion": 23,
     "SecondsPerBlock": 1,
@@ -16,6 +17,8 @@
       "127.0.0.1:20004"
     ],
     "SystemFee": {
+      "IssueTransaction": 5,
+      "RegisterTransaction": 100
     }
   }
 }

@@ -1,5 +1,6 @@
 ﻿{
   "ProtocolConfiguration": {
+    "NetworkType": "Internet",
     "Magic": 25440251,
     "AddressVersion": 23,
     "SecondsPerBlock": 1,
@@ -16,6 +17,8 @@
       "115.159.68.43:20001"
     ],
     "SystemFee": {
+      "IssueTransaction": 500,
+      "RegisterTransaction": 10000
     }
   }
 }
