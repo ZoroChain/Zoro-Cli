@@ -619,6 +619,9 @@ namespace Zoro.Shell
         {
             bool stop = false;
             bool detail = (args.Length >= 3 && int.Parse(args[2]) == 1);
+            if (detail)
+                PluginManager.EnableLog(false);
+
             Task.Run(() =>
             {
                 while (!stop)
@@ -639,12 +642,14 @@ namespace Zoro.Shell
             });
             Console.ReadLine();
             stop = true;
+            if (detail)
+                PluginManager.EnableLog(true);
             return true;
         }
 
         private void ShowState(Blockchain blockchain, LocalNode localNode, bool printRemoteNode)
         {
-            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}");
+            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}");
             if (printRemoteNode)
             {
                 foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
