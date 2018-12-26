@@ -654,7 +654,7 @@ namespace Zoro.Shell
             {
                 foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
                 {
-                    Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}");
+                    Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}\tsend: {node.DataSendedStat}\trecv: {node.TaskCompletedStat}\ttimeout: {node.TaskTimeoutStat}");
                 }
             }
         }
