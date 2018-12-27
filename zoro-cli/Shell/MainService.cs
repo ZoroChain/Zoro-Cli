@@ -617,8 +617,8 @@ namespace Zoro.Shell
         private bool OnShowStateCommand(string[] args)
         {
             bool stop = false;
-            bool detail = (args.Length >= 3 && int.Parse(args[2]) == 1);
-            if (detail)
+            int detail = args.Length >= 3 ? int.Parse(args[2]) : 0;
+            if (detail > 0)
                 PluginManager.EnableLog(false);
 
             Task.Run(() =>
@@ -626,14 +626,14 @@ namespace Zoro.Shell
                 while (!stop)
                 {
                     Console.Clear();
-                    ShowState(Blockchain.Root, LocalNode.Root, detail);
+                    ShowState(Blockchain.Root, LocalNode.Root, detail > 0, detail - 1);
                     LocalNode[] appchainNodes = ZoroChainSystem.Singleton.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
                         {
                             Console.WriteLine("====================================================================");
-                            ShowState(node.Blockchain, node, detail);
+                            ShowState(node.Blockchain, node, detail > 0, detail - 1);
                         }
                     }
                     Thread.Sleep(1000);
@@ -641,19 +641,21 @@ namespace Zoro.Shell
             });
             Console.ReadLine();
             stop = true;
-            if (detail)
+            if (detail > 0)
                 PluginManager.EnableLog(true);
             return true;
         }
 
-        private void ShowState(Blockchain blockchain, LocalNode localNode, bool printRemoteNode)
+        private void ShowState(Blockchain blockchain, LocalNode localNode, bool printRemoteNode, int index)
         {
             Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}");
             if (printRemoteNode)
             {
+                index = Math.Clamp(index, 0, 2);
+
                 foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
                 {
-                    Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}\ttimeout: {node.TaskTimeoutStat}\tsend: {node.DataSendedStat}\trecv: {node.TaskCompletedStat}");
+                    Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}\ttimeout: {node.TaskTimeoutStat(index)}\tsend: {node.DataSendedStat(index)}\trequest: {node.DataRequestStat(index)}\trecv: {node.TaskCompletedStat(index)}");
                 }
             }
         }
