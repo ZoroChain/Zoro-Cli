@@ -108,12 +108,11 @@ namespace Zoro.Shell
                     payload = GetBlocksPayload.Create(UInt256.Parse(args[3]));
                     break;
                 case "getdata":
-                case "inv":
                     payload = InvPayload.Create(Enum.Parse<InventoryType>(args[3], true), UInt256.Parse(args[4]));
                     break;
+                case "inv":
                 case "getdatagroup":
-                case "invgroup":
-                    payload = InvGroupPayload.Create(Enum.Parse<InventoryType>(args[3], true), args.Skip(4).Select(UInt256.Parse).ToArray());
+                    payload = InvPayload.Create(Enum.Parse<InventoryType>(args[3], true), args.Skip(4).Select(UInt256.Parse).ToArray());
                     break;
                 case "tx":
                     payload = blockchain.GetTransaction(UInt256.Parse(args[3]));
