@@ -15,10 +15,6 @@
       "10.1.6.241:20002",
       "10.1.6.241:20003",
       "10.1.6.241:20004"
-    ],
-    "SystemFee": {
-      "IssueTransaction": 5,
-      "RegisterTransaction": 100
-    }
+    ]
   }
 }
