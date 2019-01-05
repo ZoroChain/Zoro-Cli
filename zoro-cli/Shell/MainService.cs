@@ -7,6 +7,7 @@ using Zoro.Persistence;
 using Zoro.Persistence.LevelDB;
 using Zoro.Services;
 using Zoro.SmartContract;
+using Zoro.SmartContract.NativeNEP5;
 using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
 using Zoro.Plugins;
@@ -15,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -525,17 +527,25 @@ namespace Zoro.Shell
             try
             {
                 UInt160 chainHash = args.Length == 3 ? UInt160.Parse(args[2]) : UInt160.Zero;
+                Blockchain blockchain = ZoroChainSystem.Singleton.GetBlockchain(chainHash);
 
-                foreach (var item in Program.Wallet.GetCoins(chainHash).GroupBy(p => p.AssetId, (k, g) => new
+                using (Snapshot snapshot = blockchain.GetSnapshot())
                 {
-                    Asset = Blockchain.Root.Store.GetAssets().TryGet(k),
-                    Balance = g.Sum(p => p.Balance)
-                }))
-                {
-                    Console.WriteLine($"       id:{item.Asset.AssetId}");
-                    Console.WriteLine($"     name:{item.Asset.GetName()}");
-                    Console.WriteLine($"  balance:{item.Balance}");
-                    Console.WriteLine();
+                    foreach (var account in Program.Wallet.GetAccounts())
+                    {
+                        Console.WriteLine($"  account:{account.ScriptHash}");
+                        Console.WriteLine();
+
+                        foreach (var item in snapshot.NativeNEP5s.Find().Select(p => p.Value))
+                        {
+                            BigInteger balance = NativeAPI.BalanceOf(snapshot, item.AssetId, account.ScriptHash);
+    
+                            Console.WriteLine($"       id:{item.AssetId}");
+                            Console.WriteLine($"     name:{item.Name}");
+                            Console.WriteLine($"  balance:{balance}");
+                            Console.WriteLine();
+                        }
+                    }
                 }
             }
             catch (Exception)
