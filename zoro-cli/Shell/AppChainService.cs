@@ -300,8 +300,8 @@ namespace Zoro.Shell
 
             InvocationTransaction tx = new InvocationTransaction
             {
-                ChainHash = UInt160.Zero,
-                Version = 1,
+                Nonce = Transaction.GetNonce(),
+                Account = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash(),
                 Script = script,
                 GasLimit = InvocationTransaction.GetGasLimit(Fixed8.Zero),
             };
@@ -309,7 +309,7 @@ namespace Zoro.Shell
             tx.Attributes = new TransactionAttribute[1];
             tx.Attributes[0] = new TransactionAttribute();
             tx.Attributes[0].Usage = TransactionAttributeUsage.Script;
-            tx.Attributes[0].Data = Contract.CreateSignatureRedeemScript(keyPair.PublicKey).ToScriptHash().ToArray();
+            tx.Attributes[0].Data = tx.Account.ToArray();
 
             ContractParametersContext context = new ContractParametersContext(tx, blockchain);
             Program.Wallet.Sign(context);
