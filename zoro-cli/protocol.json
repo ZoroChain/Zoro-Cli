@@ -4,6 +4,7 @@
     "Magic": 25440251,
     "AddressVersion": 23,
     "SecondsPerBlock": 1,
+    "EnableRawTxnList": false,
     "StandbyValidators": [
       "025178aa02ccb9a30c74c0e9771ed60d771710625e41d1ae37a192a6db2c00e7d6",
       "02ade1a21bd7d90b88299e7e1fef91c12fdc9988ad9100816d3b50cb6090fd88a2",
