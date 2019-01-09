@@ -14,6 +14,7 @@ using Zoro.Plugins;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Numerics;
@@ -75,6 +76,10 @@ namespace Zoro.Shell
                     return OnShowCommand(args);
                 case "start":
                     return OnStartCommand(args);
+                case "install":
+                    return OnInstallCommand(args);
+                case "uninstall":
+                    return OnUnInstallCommand(args);
                 case "appchain":
                     return OnAppChainCommand(args);
                 case "clear":
@@ -378,13 +383,10 @@ namespace Zoro.Shell
                 "Wallet Commands:\n" +
                 "\tcreate wallet <path>\n" +
                 "\topen wallet <path>\n" +
-                "\tupgrade wallet <path>\n" +
                 "\trebuild index\n" +
                 "\tlist address\n" +
                 "\tlist asset\n" +
                 "\tlist key\n" +
-                "\tshow utxo [id|alias]\n" +
-                "\tshow gas\n" +
                 "\tclaim gas [all]\n" +
                 "\tcreate address [n=1]\n" +
                 "\timport key <wif|path>\n" +
@@ -396,6 +398,10 @@ namespace Zoro.Shell
                 "\tshow state\n" +
                 "\tshow pool [verbose]\n" +
                 "\trelay <jsonObjectToSign>\n" +
+                "Plugin Commands:\n" +
+                "\tplugins\n" +
+                "\tinstall <pluginName>\n" +
+                "\tuninstall <pluginName>\n" +
                 "Advanced Commands:\n" +
                 "\tstart consensus\n");
             return true;
@@ -826,6 +832,53 @@ namespace Zoro.Shell
             system.Dispose();
             Console.WriteLine("Press enter key to quit.");
             Console.ReadLine();
+        }
+
+        private bool OnInstallCommand(string[] args)
+        {
+            if (args.Length < 2)
+            {
+                Console.WriteLine("error");
+                return true;
+            }
+            var pluginName = args[1];
+            var address = string.Format(Settings.Default.PluginURL, pluginName, typeof(Plugin).Assembly.GetVersion());
+            var fileName = Path.Combine("Plugins", $"{pluginName}.zip");
+            Directory.CreateDirectory("Plugins");
+            Console.WriteLine($"Downloading from {address}");
+            using (WebClient wc = new WebClient())
+            {
+                wc.DownloadFile(address, fileName);
+            }
+            try
+            {
+                ZipFile.ExtractToDirectory(fileName, ".");
+            }
+            catch (IOException)
+            {
+                Console.WriteLine($"Plugin already exist.");
+                return true;
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+            Console.WriteLine($"Install successful, please restart neo-cli.");
+            return true;
+        }
+
+        private bool OnUnInstallCommand(string[] args)
+        {
+            if (args.Length < 2)
+            {
+                Console.WriteLine("error");
+                return true;
+            }
+            var pluginName = args[1];
+            Directory.Delete(Path.Combine("Plugins", pluginName), true);
+            File.Delete(Path.Combine("Plugins", $"{pluginName}.dll"));
+            Console.WriteLine($"Uninstall successful, please restart neo-cli.");
+            return true;
         }
 
         private Wallet OpenWallet(string path, string password)

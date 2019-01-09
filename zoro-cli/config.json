@@ -15,10 +15,11 @@
       "SslCertPassword": ""
     },
     "UnlockWallet": {
-      "Path": "wallet.json",
-      "Password": "123456",
-      "StartConsensus": true,
-      "IsActive": false
-    }
+      "Path": "0.json",
+      "Password": "123",
+      "StartConsensus": false,
+      "IsActive": true
+    },
+    "PluginURL": "https://github.com/ZoroChain/Zoro-Plugins/releases/download/v{1}/{0}.zip"
   }
 }
