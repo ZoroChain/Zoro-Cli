@@ -77,6 +77,8 @@ namespace Zoro.Shell
                     return OnStartCommand(args);
                 case "appchain":
                     return OnAppChainCommand(args);
+                case "clear":
+                    return OnClearCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -608,8 +610,8 @@ namespace Zoro.Shell
                     return OnShowPoolCommand(args);
                 case "state":
                     return OnShowStateCommand(args);
-                case "statistic":
-                    return OnShowStatisticCommand(args);
+                case "rts":
+                    return OnShowRtsCommand(args);
                 default:
                     return base.OnCommand(args);
             }
@@ -663,33 +665,33 @@ namespace Zoro.Shell
             Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}");
             if (printRemoteNode)
             {
-                foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
+                foreach (RemoteNode node in localNode.GetRemoteNodes())
                 {
                     Console.WriteLine($"  ip: {node.Remote.Address}\tport: {node.Remote.Port}\tlisten: {node.ListenerPort}\theight: {node.Version?.StartHeight}");
                 }
             }
         }
 
-        private bool OnShowStatisticCommand(string[] args)
+        private bool OnShowRtsCommand(string[] args)
         {
             bool stop = false;
-            int detail = args.Length >= 3 ? int.Parse(args[2]) : 0;
-            if (detail > 0)
-                PluginManager.EnableLog(false);
+            int type = args.Length >= 3 ? int.Parse(args[2]) : 0;
+            PluginManager.EnableLog(false);
+
 
             Task.Run(() =>
             {
                 while (!stop)
                 {
                     Console.Clear();
-                    ShowStatistic(Blockchain.Root, LocalNode.Root, detail > 0, detail - 1);
+                    ShowRts(Blockchain.Root, LocalNode.Root, type - 1);
                     LocalNode[] appchainNodes = ZoroChainSystem.Singleton.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
                         {
                             Console.WriteLine("====================================================================");
-                            ShowStatistic(node.Blockchain, node, detail > 0, detail - 1);
+                            ShowRts(node.Blockchain, node, type - 1);
                         }
                     }
                     Thread.Sleep(1000);
@@ -697,22 +699,54 @@ namespace Zoro.Shell
             });
             Console.ReadLine();
             stop = true;
-            if (detail > 0)
-                PluginManager.EnableLog(true);
+            PluginManager.EnableLog(true);
+
             return true;
         }
 
-        private void ShowStatistic(Blockchain blockchain, LocalNode localNode, bool printRemoteNode, int index)
+        private void ShowRts(Blockchain blockchain, LocalNode localNode, int type)
         {
             Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}");
-            if (printRemoteNode)
-            {
-                index = Math.Clamp(index, 0, 2);
+            type = Math.Clamp(type, 0, 2);
 
-                foreach (RemoteNode node in localNode.GetRemoteNodes().Take(Console.WindowHeight - 2))
+            foreach (RemoteNode node in localNode.GetRemoteNodes())
+            {
+                Console.WriteLine($"  ip: {node.Remote.Address}\tsend: {node.DataSendedStat(type)} request: {node.DataRequestStat(type)} recv: {node.TaskCompletedStat(type)} timeout: {node.TaskTimeoutStat(type)}");
+            }
+        }
+
+        private bool OnClearCommand(string[] args)
+        {
+            switch (args[1].ToLower())
+            {
+               case "rts":
+                    return OnClearRtsCommand(args);
+                default:
+                    return base.OnCommand(args);
+            }
+        }
+
+        private bool OnClearRtsCommand(string[] args)
+        {
+            ClearRts(LocalNode.Root);
+
+            LocalNode[] appchainNodes = ZoroChainSystem.Singleton.GetAppChainLocalNodes();
+            foreach (var localNode in appchainNodes)
+            {
+                if (localNode != null)
                 {
-                    Console.WriteLine($"  ip: {node.Remote.Address}\ttimeout: {node.TaskTimeoutStat(index)}\tsend: {node.DataSendedStat(index)}\trequest: {node.DataRequestStat(index)}\trecv: {node.TaskCompletedStat(index)}");
+                    ClearRts(localNode);
                 }
+            }
+
+            return true;
+        }
+
+        private void ClearRts(LocalNode localNode)
+        {
+            foreach (RemoteNode node in localNode.GetRemoteNodes())
+            {
+                node.ClearRts();
             }
         }
 
