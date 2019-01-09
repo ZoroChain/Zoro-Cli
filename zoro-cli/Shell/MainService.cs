@@ -675,9 +675,8 @@ namespace Zoro.Shell
         private bool OnShowRtsCommand(string[] args)
         {
             bool stop = false;
-            int type = args.Length >= 3 ? int.Parse(args[2]) : 0;
+            int type = args.Length >= 3 ? int.Parse(args[2]) : 1;
             PluginManager.EnableLog(false);
-
 
             Task.Run(() =>
             {
