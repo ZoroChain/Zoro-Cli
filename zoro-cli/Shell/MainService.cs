@@ -779,8 +779,12 @@ namespace Zoro.Shell
                 PluginManager.EnableLog(false);
             }
 
-            store = new LevelDBStore(Path.GetFullPath(Settings.Default.Paths.Chain));
-            system = new ZoroChainSystem(store);
+            string chainPath = Settings.Default.Paths.Chain;
+            string relativePath = Settings.Default.Paths.RelativePath;
+            string path = relativePath.Length > 0 ? relativePath + chainPath : chainPath;
+
+            store = new LevelDBStore(path);
+            system = new ZoroChainSystem(store, Settings.Default.Paths.RelativePath);
 
             if (Settings.Default.UnlockWallet.IsActive)
             {
