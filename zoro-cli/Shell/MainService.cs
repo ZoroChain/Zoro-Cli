@@ -11,6 +11,7 @@ using Zoro.SmartContract.NativeNEP5;
 using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
 using Zoro.Plugins;
+using Zoro.TxnPool;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -625,8 +626,14 @@ namespace Zoro.Shell
 
         private bool OnShowPoolCommand(string[] args)
         {
-            bool verbose = args.Length >= 3 && args[2] == "verbose";
-            Transaction[] transactions = Blockchain.Root.GetMemoryPool().ToArray();
+            string hashString = args.Length >= 3 ? args[2] : "";
+            bool verbose = args.Length >= 4 && args[3] == "verbose";
+
+            TransactionPool txnPool = ZoroChainSystem.Singleton.GetTransactionPool(hashString);
+            if (txnPool == null)
+                return true;
+
+            Transaction[] transactions = txnPool.GetMemoryPool().ToArray();
             if (verbose)
                 foreach (Transaction tx in transactions)
                     Console.WriteLine($"{tx.Hash} {tx.GetType().Name}");
@@ -646,14 +653,14 @@ namespace Zoro.Shell
                 while (!stop)
                 {
                     Console.Clear();
-                    ShowState(Blockchain.Root, LocalNode.Root, detail);
+                    ShowState(LocalNode.Root, detail);
                     LocalNode[] appchainNodes = ZoroChainSystem.Singleton.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
                         {
                             Console.WriteLine("====================================================================");
-                            ShowState(node.Blockchain, node, detail);
+                            ShowState(node, detail);
                         }
                     }
                     Thread.Sleep(1000);
@@ -666,9 +673,12 @@ namespace Zoro.Shell
             return true;
         }
 
-        private void ShowState(Blockchain blockchain, LocalNode localNode, bool printRemoteNode)
+        private void ShowState(LocalNode localNode, bool printRemoteNode)
         {
-            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}");
+            Blockchain blockchain = localNode.Blockchain;
+            TransactionPool txnPool = localNode.TxnPool;
+
+            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{txnPool.GetMemoryPoolCount()}");
             if (printRemoteNode)
             {
                 foreach (RemoteNode node in localNode.GetRemoteNodes())
@@ -689,14 +699,14 @@ namespace Zoro.Shell
                 while (!stop)
                 {
                     Console.Clear();
-                    ShowRts(Blockchain.Root, LocalNode.Root, type - 1);
+                    ShowRts(LocalNode.Root, type - 1);
                     LocalNode[] appchainNodes = ZoroChainSystem.Singleton.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
                         {
                             Console.WriteLine("====================================================================");
-                            ShowRts(node.Blockchain, node, type - 1);
+                            ShowRts(node, type - 1);
                         }
                     }
                     Thread.Sleep(1000);
@@ -709,9 +719,12 @@ namespace Zoro.Shell
             return true;
         }
 
-        private void ShowRts(Blockchain blockchain, LocalNode localNode, int type)
+        private void ShowRts(LocalNode localNode, int type)
         {
-            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}");
+            Blockchain blockchain = localNode.Blockchain;
+            TransactionPool txnPool = localNode.TxnPool;
+
+            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{txnPool.GetMemoryPoolCount()}");
             type = Math.Clamp(type, 0, 2);
 
             foreach (RemoteNode node in localNode.GetRemoteNodes())
