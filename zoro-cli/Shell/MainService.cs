@@ -724,12 +724,28 @@ namespace Zoro.Shell
             Blockchain blockchain = localNode.Blockchain;
             TransactionPool txnPool = localNode.TxnPool;
 
-            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{txnPool.GetMemoryPoolCount()}");
+            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  mempool:{txnPool.GetMemoryPoolCount()}  TX:{GetTXRate(localNode.TxRate)}");
             type = Math.Clamp(type, 0, 2);
 
             foreach (RemoteNode node in localNode.GetRemoteNodes())
             {
-                Console.WriteLine($"  ip: {node.Remote.Address}\tsend: {node.DataSendedStat(type)} request: {node.DataRequestStat(type)} recv: {node.TaskCompletedStat(type)} timeout: {node.TaskTimeoutStat(type)}");
+                Console.WriteLine($"  ip: {node.Remote.Address}\tsend: {node.DataSendedStat(type)} request: {node.DataRequestStat(type)} recv: {node.TaskCompletedStat(type)} timeout: {node.TaskTimeoutStat(type)} TX:{GetTXRate(node.TXRate)}");
+            }
+        }
+
+        private string GetTXRate(double tx_bytes)
+        {
+            if (tx_bytes >= 1_000_000)
+            {
+                return string.Format("{0:F1}MB", tx_bytes * 0.000_001);
+            }
+            else if (tx_bytes >= 1_000)
+            {
+                return string.Format("{0:F1}KB", tx_bytes * 0.001);
+            }
+            else
+            {
+                return string.Format("{0}B", (ulong)tx_bytes);
             }
         }
 
