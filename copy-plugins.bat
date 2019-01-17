@@ -10,6 +10,9 @@ xcopy ..\Zoro-Plugins\ApplicationLogs\ApplicationLogs zoro-cli\bin\Debug\netcore
 xcopy ..\Zoro-Plugins\StressTesting\bin\Debug\netstandard2.0\StressTesting.dll zoro-cli\bin\Debug\netcoreapp2.1\Plugins\ /y /q
 xcopy ..\Zoro-Plugins\StressTesting\StressTesting zoro-cli\bin\Debug\netcoreapp2.1\Plugins\StressTesting\ /y /q
 
+xcopy ..\Zoro-Plugins\ImportBlocks\bin\Debug\netstandard2.0\ImportBlocks.dll zoro-cli\bin\Debug\netcoreapp2.1\Plugins\ /y /q
+xcopy ..\Zoro-Plugins\ImportBlocks\ImportBlocks zoro-cli\bin\Debug\netcoreapp2.1\Plugins\ImportBlocks\ /y /q
+
 xcopy ..\Zoro-Plugins\RpcAgent\bin\Release\netstandard2.0\RpcAgent.dll zoro-cli\bin\Release\netcoreapp2.1\Plugins\ /y /q
 xcopy ..\Zoro-Plugins\RpcAgent\RpcAgent zoro-cli\bin\Release\netcoreapp2.1\Plugins\RpcAgent\ /y /q
 
@@ -21,5 +24,8 @@ xcopy ..\Zoro-Plugins\ApplicationLogs\ApplicationLogs zoro-cli\bin\Release\netco
 
 xcopy ..\Zoro-Plugins\StressTesting\bin\Release\netstandard2.0\StressTesting.dll zoro-cli\bin\Release\netcoreapp2.1\Plugins\ /y /q
 xcopy ..\Zoro-Plugins\StressTesting\StressTesting zoro-cli\bin\Release\netcoreapp2.1\Plugins\StressTesting\ /y /q
+
+xcopy ..\Zoro-Plugins\ImportBlocks\bin\Release\netstandard2.0\ImportBlocks.dll zoro-cli\bin\Release\netcoreapp2.1\Plugins\ /y /q
+xcopy ..\Zoro-Plugins\ImportBlocks\ImportBlocks zoro-cli\bin\Release\netcoreapp2.1\Plugins\ImportBlocks\ /y /q
 
 pause
