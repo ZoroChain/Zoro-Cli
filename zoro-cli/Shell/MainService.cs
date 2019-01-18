@@ -735,17 +735,14 @@ namespace Zoro.Shell
 
         private string GetTXRate(double tx_bytes)
         {
-            if (tx_bytes >= 1_000_000)
+            double bps = tx_bytes * 8;
+            if (bps >= 1_000_000)
             {
-                return string.Format("{0:F1}MB", tx_bytes * 0.000_001);
-            }
-            else if (tx_bytes >= 1_000)
-            {
-                return string.Format("{0:F1}KB", tx_bytes * 0.001);
+                return string.Format("{0:F1}Mb", bps * 0.000_001);
             }
             else
             {
-                return string.Format("{0}B", (ulong)tx_bytes);
+                return string.Format("{0:F1}Kb", bps * 0.001);
             }
         }
 
