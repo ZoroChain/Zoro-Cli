@@ -317,7 +317,7 @@ namespace Zoro.Shell
             {
                 tx.Witnesses = context.GetWitnesses();
 
-                RelayResultReason reason = system.TxnPool.Ask<RelayResultReason>(tx).Result;
+                RelayResultReason reason = system.Blockchain.Ask<RelayResultReason>(tx).Result;
 
                 if (reason != RelayResultReason.Succeed)
                 {

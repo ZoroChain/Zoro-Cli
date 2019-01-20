@@ -11,7 +11,6 @@ using Zoro.SmartContract.NativeNEP5;
 using Zoro.Wallets;
 using Zoro.Wallets.NEP6;
 using Zoro.Plugins;
-using Zoro.TxnPool;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -629,11 +628,11 @@ namespace Zoro.Shell
             string hashString = args.Length >= 3 ? args[2] : "";
             bool verbose = args.Length >= 4 && args[3] == "verbose";
 
-            TransactionPool txnPool = ZoroChainSystem.Singleton.GetTransactionPool(hashString);
-            if (txnPool == null)
+            Blockchain blockchain = ZoroChainSystem.Singleton.GetBlockchain(hashString);
+            if (blockchain == null)
                 return true;
 
-            Transaction[] transactions = txnPool.GetMemoryPool().ToArray();
+            Transaction[] transactions = blockchain.GetMemoryPool().ToArray();
             if (verbose)
                 foreach (Transaction tx in transactions)
                     Console.WriteLine($"{tx.Hash} {tx.GetType().Name}");
@@ -676,9 +675,8 @@ namespace Zoro.Shell
         private void ShowState(LocalNode localNode, bool printRemoteNode)
         {
             Blockchain blockchain = localNode.Blockchain;
-            TransactionPool txnPool = localNode.TxnPool;
 
-            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{txnPool.GetMemoryPoolCount()}");
+            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  unconnected: {localNode.UnconnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}");
             if (printRemoteNode)
             {
                 foreach (RemoteNode node in localNode.GetRemoteNodes())
@@ -722,9 +720,8 @@ namespace Zoro.Shell
         private void ShowRts(LocalNode localNode, int type)
         {
             Blockchain blockchain = localNode.Blockchain;
-            TransactionPool txnPool = localNode.TxnPool;
 
-            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  mempool:{txnPool.GetMemoryPoolCount()}  TX:{GetTXRate(localNode.TxRate)}");
+            Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}  TX:{GetTXRate(localNode.TxRate)}");
             type = Math.Clamp(type, 0, 2);
 
             foreach (RemoteNode node in localNode.GetRemoteNodes())
