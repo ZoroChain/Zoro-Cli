@@ -697,14 +697,14 @@ namespace Zoro.Shell
                 while (!stop)
                 {
                     Console.Clear();
-                    ShowRts(LocalNode.Root, type - 1);
+                    ShowRts(LocalNode.Root, GetRtsType(type));
                     LocalNode[] appchainNodes = ZoroChainSystem.Singleton.GetAppChainLocalNodes();
                     foreach (var node in appchainNodes)
                     {
                         if (node != null && node.Blockchain != null)
                         {
                             Console.WriteLine("====================================================================");
-                            ShowRts(node, type - 1);
+                            ShowRts(node, GetRtsType(type));
                         }
                     }
                     Thread.Sleep(1000);
@@ -717,17 +717,33 @@ namespace Zoro.Shell
             return true;
         }
 
-        private void ShowRts(LocalNode localNode, int type)
+        private void ShowRts(LocalNode localNode, InventoryType type)
         {
             Blockchain blockchain = localNode.Blockchain;
 
             Console.WriteLine($"block:{blockchain.Name} {blockchain.ChainHash.ToString()} {blockchain.Height}/{blockchain.HeaderHeight}  connected: {localNode.ConnectedCount}  mempool:{blockchain.GetMemoryPoolCount()}  TX:{GetTXRate(localNode.TxRate)}");
-            type = Math.Clamp(type, 0, 2);
 
             foreach (RemoteNode node in localNode.GetRemoteNodes())
             {
-                Console.WriteLine($"  ip: {node.Remote.Address}\tsend: {node.DataSendedStat(type)} request: {node.DataRequestStat(type)} recv: {node.TaskCompletedStat(type)} timeout: {node.TaskTimeoutStat(type)} TX:{GetTXRate(node.TXRate)}");
+                Console.WriteLine($"  ip: {node.Remote.Address}\t" +
+                    $"send: {node.GetCounter(RemoteNode.CounterType.Send, type)} " +
+                    $"request: {node.GetCounter(RemoteNode.CounterType.Request, type)} " +
+                    $"recv: {node.GetCounter(RemoteNode.CounterType.Received, type)} " +
+                    $"timeout: {node.GetCounter(RemoteNode.CounterType.Timeout, type)} " +
+                    $"TX:{GetTXRate(node.TXRate)}");
             }
+        }
+
+        private InventoryType GetRtsType(int type)
+        {
+            InventoryType invType = InventoryType.TX;
+            if (type == 1)
+                invType = InventoryType.TX;
+            else if (type == 2)
+                invType = InventoryType.Block;
+            else if (type == 3)
+                invType = InventoryType.Consensus;
+            return invType;
         }
 
         private string GetTXRate(double tx_bytes)
@@ -774,7 +790,7 @@ namespace Zoro.Shell
         {
             foreach (RemoteNode node in localNode.GetRemoteNodes())
             {
-                node.ClearRts();
+                node.ClearCounters();
             }
         }
 
