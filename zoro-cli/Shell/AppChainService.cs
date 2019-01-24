@@ -151,6 +151,8 @@ namespace Zoro.Shell
                 validators[i] = ReadString("validator pubkey " + (i + 1).ToString());
             }
 
+            int privatechain = ReadInt("is private chain");
+
             ScriptBuilder sb = new ScriptBuilder();
             for (int i = 0; i < numValidators; i++)
             {
@@ -163,6 +165,7 @@ namespace Zoro.Shell
             }
             sb.EmitPush(numSeeds);
             sb.EmitPush(DateTime.UtcNow.ToTimestamp());
+            sb.EmitPush(privatechain == 1 ? 1 : 0);
             sb.EmitPush(keyPair.PublicKey.EncodePoint(true));
             sb.EmitPush(name);
 
