@@ -872,6 +872,7 @@ namespace Zoro.Shell
 
         protected internal override void OnStop()
         {
+            system.SaveRecentPeers();
             system.Dispose();
             Console.WriteLine("Press enter key to quit.");
             Console.ReadLine();
