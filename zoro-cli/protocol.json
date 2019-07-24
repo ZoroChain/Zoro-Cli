@@ -1,20 +1,20 @@
 ﻿{
   "ProtocolConfiguration": {
     "NetworkType": "Internet",
-    "Magic": 25440251,
+    "Magic": 666666,
     "AddressVersion": 23,
     "SecondsPerBlock": 1,
     "StandbyValidators": [
-      "025178aa02ccb9a30c74c0e9771ed60d771710625e41d1ae37a192a6db2c00e7d6",
-      "02ade1a21bd7d90b88299e7e1fef91c12fdc9988ad9100816d3b50cb6090fd88a2",
-      "02f0a7538d3aa6fc6a91315c5842733820df5b4ec1e4f273adc5d36eebd0f7463a",
-      "03f35c16c5e8837697b9263f44f62be58c058562e76b033ed29a2223792901f6b1"
+      "02826531038d6edc0d9b3a69e92e4d7408a0de71cad241a4b496b7589490b43f11",
+      "02ccec72b6d64b3512d894e7dc1bd4d941ad3d026d0b0710042ddc4847993c9727",
+      "037de005592f91ab63512183c25f440ae6422b79918eb7a38a26bbadee16f8b5a6",
+      "03c6904e00c7bd7a6b492123a76380e1585149caccdb5edeca930b5c4de08d8863"
     ],
     "SeedList": [
-      "182.254.221.14:20001",
-      "123.207.183.55:20001",
-      "182.254.219.170:20001",
-      "115.159.68.43:20001"
+      "127.0.0.1:20001",
+      "127.0.0.1:20002",
+      "127.0.0.1:20003",
+      "127.0.0.1:20004"
     ]
   }
 }

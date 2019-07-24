@@ -294,7 +294,7 @@ namespace Zoro.Shell
             {
                 case ".json":
                     {
-                        NEP6Wallet wallet = new NEP6Wallet(path);
+                        NEP6Wallet wallet = new NEP6Wallet(path, null);
                         wallet.Unlock(password);
                         WalletAccount account = wallet.CreateAccount();
                         wallet.Save();
@@ -829,13 +829,18 @@ namespace Zoro.Shell
             {
                 try
                 {
+                    //Task.Factory.StartNew(() => HttpServer.HttpServerStart(Settings.Default.UnlockWallet.HttpAddress));
+                    //Settings.Default.UnlockWallet.Password = ReadPassword("Wallet password");
+                    //Console.WriteLine($"http server start \"{Settings.Default.UnlockWallet.HttpAddress}\"");
                     Program.Wallet = OpenWallet(Settings.Default.UnlockWallet.Path, Settings.Default.UnlockWallet.Password);
                 }
                 catch (CryptographicException)
                 {
+                    //Console.WriteLine($"failed to start http server \"{Settings.Default.UnlockWallet.HttpAddress}\"");
                     Console.WriteLine($"failed to open file \"{Settings.Default.UnlockWallet.Path}\"");
                 }
             }
+
             system.StartNode(UInt160.Zero, Settings.Default.P2P.Port, Settings.Default.P2P.WsPort);
             if (Settings.Default.UnlockWallet.StartConsensus && Program.Wallet != null)
             {
@@ -907,7 +912,7 @@ namespace Zoro.Shell
             {
                 File.Delete(fileName);
             }
-            Console.WriteLine($"Install successful, please restart neo-cli.");
+            Console.WriteLine($"Install successful, please restart zoro-cli.");
             return true;
         }
 
@@ -921,7 +926,7 @@ namespace Zoro.Shell
             var pluginName = args[1];
             Directory.Delete(Path.Combine("Plugins", pluginName), true);
             File.Delete(Path.Combine("Plugins", $"{pluginName}.dll"));
-            Console.WriteLine($"Uninstall successful, please restart neo-cli.");
+            Console.WriteLine($"Uninstall successful, please restart zoro-cli.");
             return true;
         }
 
@@ -930,7 +935,7 @@ namespace Zoro.Shell
             Wallet wallet = null;
             if (Path.GetExtension(path) == ".json")
             {
-                NEP6Wallet nep6wallet = new NEP6Wallet(path);
+                NEP6Wallet nep6wallet = new NEP6Wallet(path, null);
                 nep6wallet.Unlock(password);
                 wallet = nep6wallet;
 

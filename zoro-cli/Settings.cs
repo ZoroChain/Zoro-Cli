@@ -73,7 +73,8 @@ namespace Zoro
     public class UnlockWalletSettings
     {
         public string Path { get; }
-        public string Password { get; }
+        public string HttpAddress { get; }
+        public string Password { get; set; }
         public bool StartConsensus { get; }
         public bool IsActive { get; }
 
@@ -82,6 +83,7 @@ namespace Zoro
             if (section.Exists())
             {
                 this.Path = section.GetSection("Path").Value;
+                this.HttpAddress = section.GetSection("HttpAddress").Value;
                 this.Password = section.GetSection("Password").Value;
                 this.StartConsensus = bool.Parse(section.GetSection("StartConsensus").Value);
                 this.IsActive = bool.Parse(section.GetSection("IsActive").Value);

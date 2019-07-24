@@ -35,4 +35,6 @@
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.5.0" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties config_1json__JSONSchema="http://json.schemastore.org/appveyor" /></VisualStudio></ProjectExtensions>
+
 </Project>
